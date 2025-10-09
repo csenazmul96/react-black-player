@@ -101,6 +101,12 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     const mainSource = currentSources[0];
     if (!mainSource) return;
 
+    // Reset state when source changes
+    setIsPlaying(false);
+    setShowCenterPlay(!autoPlay);
+    setCurrentTime(0);
+    setDuration(0);
+
     // Check if source is m3u8
     const isHLS = mainSource.src.includes('.m3u8') || mainSource.type === 'application/x-mpegURL';
 
@@ -127,7 +133,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     } else {
       video.src = mainSource.src;
     }
-  }, [currentSources, onError]);
+  }, [currentSources, onError, autoPlay]);
 
   // Apply theme to container
   useEffect(() => {
@@ -195,14 +201,15 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     }
 
     if (video.paused) {
-      video.play();
-      setIsPlaying(true);
-      setShowCenterPlay(false);
-      onPlay?.();
+      video.play().then(() => {
+        onPlay?.();
+      }).catch((error) => {
+        console.error('Error playing video:', error);
+        setIsPlaying(false);
+        setShowCenterPlay(true);
+      });
     } else {
       video.pause();
-      setIsPlaying(false);
-      setShowCenterPlay(true);
       onPause?.();
     }
   }, [onPlay, onPause, showPlaylistSidebar]);
@@ -369,11 +376,34 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
       onSeeking?.();
     };
 
+    const handlePlay = () => {
+      setIsPlaying(true);
+      setShowCenterPlay(false);
+    };
+
+    const handlePause = () => {
+      setIsPlaying(false);
+      setShowCenterPlay(true);
+    };
+
+    const handleWaiting = () => {
+      setShowCenterPlay(true);
+    };
+
+    const handlePlaying = () => {
+      setIsPlaying(true);
+      setShowCenterPlay(false);
+    };
+
     video.addEventListener('timeupdate', handleTimeUpdate);
     video.addEventListener('loadedmetadata', handleLoadedMetadata);
     video.addEventListener('ended', handleEnded);
     video.addEventListener('canplay', handleCanPlay);
     video.addEventListener('seeking', handleSeeking);
+    video.addEventListener('play', handlePlay);
+    video.addEventListener('pause', handlePause);
+    video.addEventListener('waiting', handleWaiting);
+    video.addEventListener('playing', handlePlaying);
 
     return () => {
       video.removeEventListener('timeupdate', handleTimeUpdate);
@@ -381,6 +411,10 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
       video.removeEventListener('ended', handleEnded);
       video.removeEventListener('canplay', handleCanPlay);
       video.removeEventListener('seeking', handleSeeking);
+      video.removeEventListener('play', handlePlay);
+      video.removeEventListener('pause', handlePause);
+      video.removeEventListener('waiting', handleWaiting);
+      video.removeEventListener('playing', handlePlaying);
     };
   }, [onTimeUpdate, onLoadedMetadata, onEnded, onCanPlay, onSeeking, autoPlayNext, playlist.length, playNextVideo]);
 

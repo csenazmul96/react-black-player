@@ -11,9 +11,11 @@ import {
   SkipForward,
   ChevronLeft,
   Subtitles,
+  Palette,
 } from 'lucide-react';
 import Hls from 'hls.js';
-import type { VideoPlayerProps, PlaylistItem, VideoSource, SubtitleTrack } from './types';
+import type { VideoPlayerProps, PlaylistItem, VideoSource, SubtitleTrack, Theme } from './types';
+import { defaultThemes, getThemeByName, createCustomTheme, applyThemeToElement } from './themes';
 import './styles.css';
 
 export const VideoPlayer: React.FC<VideoPlayerProps> = ({
@@ -37,6 +39,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   width = '100%',
   height = 'auto',
   aspectRatio = '16/9',
+  themeConfig,
   onPlay,
   onPause,
   onEnded,
@@ -48,6 +51,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   onPlaybackRateChange,
   onFullscreenChange,
   onPlaylistItemChange,
+  onThemeChange,
   onError,
   onLoadedMetadata,
   onCanPlay,
@@ -74,6 +78,20 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const [currentSubtitles, setCurrentSubtitles] = useState(subtitles);
   const [activeSubtitle, setActiveSubtitle] = useState<number>(-1);
   const [showCenterPlay, setShowCenterPlay] = useState(!autoPlay);
+
+  // Theme state
+  const availableThemes = themeConfig?.availableThemes || defaultThemes;
+  const [currentTheme, setCurrentTheme] = useState<Theme>(() => {
+    if (themeConfig?.customTheme) {
+      return themeConfig.customTheme;
+    }
+    if (themeConfig?.defaultTheme) {
+      return getThemeByName(availableThemes, themeConfig.defaultTheme) || availableThemes[0];
+    }
+    return availableThemes[0]; // Default to first theme (Dark)
+  });
+  const [showThemeSelector, setShowThemeSelector] = useState(false);
+  const [customThemeInputs, setCustomThemeInputs] = useState({ name: '', primaryColor: '#000000', secondaryColor: '#dc143c' });
 
   // Initialize HLS if needed
   useEffect(() => {
@@ -110,6 +128,34 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
       video.src = mainSource.src;
     }
   }, [currentSources, onError]);
+
+  // Apply theme to container
+  useEffect(() => {
+    const container = containerRef.current;
+    if (container && currentTheme) {
+      applyThemeToElement(container, currentTheme);
+    }
+  }, [currentTheme]);
+
+  // Theme handlers
+  const handleThemeChange = useCallback((theme: Theme) => {
+    setCurrentTheme(theme);
+    setShowThemeSelector(false);
+    setShowSettingsMenu(false);
+    onThemeChange?.(theme);
+  }, [onThemeChange]);
+
+  const handleCustomThemeCreate = useCallback(() => {
+    if (customThemeInputs.name && customThemeInputs.primaryColor && customThemeInputs.secondaryColor) {
+      const customTheme = createCustomTheme(
+        customThemeInputs.name,
+        customThemeInputs.primaryColor,
+        customThemeInputs.secondaryColor
+      );
+      handleThemeChange(customTheme);
+      setCustomThemeInputs({ name: '', primaryColor: '#000000', secondaryColor: '#dc143c' });
+    }
+  }, [customThemeInputs, handleThemeChange]);
 
   // Auto-hide controls
   const resetHideControlsTimer = useCallback(() => {
@@ -396,12 +442,14 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   return (
     <div
       ref={containerRef}
-      className={`relative bg-player-bg overflow-hidden ${className}`}
+      className={`relative overflow-hidden ${className}`}
       style={{
         width: typeof width === 'number' ? `${width}px` : width,
         height: typeof height === 'number' ? `${height}px` : height,
         aspectRatio: height === 'auto' ? aspectRatio : undefined,
-        border: '1px solid #000',
+        backgroundColor: currentTheme.backgroundColor || currentTheme.primaryColor,
+        border: `1px solid ${currentTheme.primaryColor}`,
+        color: currentTheme.textColor,
       }}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
@@ -443,29 +491,50 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
             togglePlay();
           }}
         >
-          <div className="w-20 h-20 rounded-full bg-black bg-opacity-70 flex items-center justify-center hover:bg-opacity-90 transition-all duration-300 hover:scale-110 relative">
-            <div className="absolute inset-0 rounded-full border-2 border-white opacity-20"></div>
-            <Play className="w-10 h-10 text-white ml-1" strokeWidth={1} fill="black" />
+          <div 
+            className="w-20 h-20 rounded-full flex items-center justify-center hover:bg-opacity-90 transition-all duration-300 hover:scale-110 relative"
+            style={{ backgroundColor: `${currentTheme.primaryColor}B3` }}
+          >
+            <div 
+              className="absolute inset-0 rounded-full border-2 opacity-20"
+              style={{ borderColor: currentTheme.textColor }}
+            ></div>
+            <Play 
+              className="w-10 h-10 ml-1" 
+              strokeWidth={1} 
+              fill={currentTheme.primaryColor}
+              style={{ color: currentTheme.textColor }}
+            />
           </div>
         </div>
       )}
 
       {/* Controls */}
       <div
-        className={`absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black via-black/80 to-transparent transition-opacity duration-300 z-40 ${
+        className={`absolute bottom-0 left-0 right-0 transition-opacity duration-300 z-40 ${
           showControls ? 'opacity-100' : 'opacity-0'
         }`}
+        style={{
+          background: `linear-gradient(to top, ${currentTheme.primaryColor}, ${currentTheme.primaryColor}CC, transparent)`
+        }}
       >
         {/* Progress Bar */}
         <div
-          className="w-full h-1 bg-gray-700 cursor-pointer group"
+          className="w-full h-1 cursor-pointer group"
+          style={{ backgroundColor: 'rgba(255, 255, 255, 0.3)' }}
           onClick={handleProgressClick}
         >
           <div
-            className="h-full bg-player-red relative group-hover:h-2 transition-all"
-            style={{ width: `${(currentTime / duration) * 100 || 0}%` }}
+            className="h-full relative group-hover:h-2 transition-all"
+            style={{ 
+              width: `${(currentTime / duration) * 100 || 0}%`,
+              backgroundColor: currentTheme.accentColor || currentTheme.secondaryColor
+            }}
           >
-            <div className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 bg-player-red rounded-full opacity-0 group-hover:opacity-100" />
+            <div 
+              className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 rounded-full opacity-0 group-hover:opacity-100" 
+              style={{ backgroundColor: currentTheme.accentColor || currentTheme.secondaryColor }}
+            />
           </div>
         </div>
 
@@ -478,7 +547,16 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                 e.stopPropagation();
                 togglePlay();
               }}
-              className="text-white hover:text-player-red transition-colors"
+              className="transition-colors"
+              style={{ 
+                color: currentTheme.textColor,
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = currentTheme.accentColor || currentTheme.secondaryColor;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = currentTheme.textColor;
+              }}
             >
               {isPlaying ? (
                 <Pause className="w-6 h-6" strokeWidth={1} />
@@ -495,7 +573,14 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                     e.stopPropagation();
                     playPreviousVideo();
                   }}
-                  className="text-white hover:text-player-red transition-colors"
+                  className="transition-colors"
+                  style={{ color: currentTheme.textColor }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.color = currentTheme.accentColor || currentTheme.secondaryColor;
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.color = currentTheme.textColor;
+                  }}
                 >
                   <SkipBack className="w-5 h-5" strokeWidth={1} />
                 </button>
@@ -504,7 +589,14 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                     e.stopPropagation();
                     playNextVideo();
                   }}
-                  className="text-white hover:text-player-red transition-colors"
+                  className="transition-colors"
+                  style={{ color: currentTheme.textColor }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.color = currentTheme.accentColor || currentTheme.secondaryColor;
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.color = currentTheme.textColor;
+                  }}
                 >
                   <SkipForward className="w-5 h-5" strokeWidth={1} />
                 </button>
@@ -519,7 +611,14 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                     e.stopPropagation();
                     toggleMute();
                   }}
-                  className="text-white hover:text-player-red transition-colors"
+                  className="transition-colors"
+                  style={{ color: currentTheme.textColor }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.color = currentTheme.accentColor || currentTheme.secondaryColor;
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.color = currentTheme.textColor;
+                  }}
                 >
                   {isMuted || volume === 0 ? (
                     <VolumeX className="w-5 h-5" strokeWidth={1} />
@@ -535,7 +634,11 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                   value={isMuted ? 0 : volume}
                   onChange={(e) => handleVolumeChange(parseFloat(e.target.value))}
                   onClick={(e) => e.stopPropagation()}
-                  className="w-0 group-hover:w-20 transition-all duration-300 h-1 bg-gray-700 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:bg-player-red [&::-webkit-slider-thumb]:rounded-full"
+                  className="w-0 group-hover:w-20 transition-all duration-300 h-1 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full"
+                  style={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+                    '--webkit-slider-thumb-background': currentTheme.accentColor || currentTheme.secondaryColor
+                  }}
                 />
               </div>
             )}
@@ -544,7 +647,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
           <div className="flex items-center gap-4">
             {/* Time */}
             {showTime && (
-              <div className="text-white text-sm">
+              <div className="text-sm" style={{ color: currentTheme.textColor }}>
                 {formatTime(currentTime)} / {formatTime(duration)}
               </div>
             )}
@@ -557,19 +660,29 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                     e.stopPropagation();
                     setShowSettingsMenu(!showSettingsMenu);
                   }}
-                  className="text-white hover:text-player-red transition-colors"
+                  className="transition-colors"
+                  style={{ color: currentTheme.textColor }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.color = currentTheme.accentColor || currentTheme.secondaryColor;
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.color = currentTheme.textColor;
+                  }}
                 >
                   <Settings className="w-5 h-5" strokeWidth={1} />
                 </button>
 
                 {showSettingsMenu && (
                   <div 
-                    className="absolute bottom-full right-0 mb-2 bg-black bg-opacity-95 rounded-lg overflow-hidden min-w-[200px] max-h-[400px] overflow-y-auto settings-scrollbar"
+                    className="absolute bottom-full right-0 mb-2 rounded-lg overflow-hidden min-w-[200px] max-h-[400px] overflow-y-auto settings-scrollbar"
+                    style={{
+                      backgroundColor: `${currentTheme.primaryColor}F2`
+                    }}
                     onClick={(e) => e.stopPropagation()}
                   >
                     {/* Playback Speed */}
-                    <div className="border-b border-gray-800">
-                      <div className="px-4 py-2 text-gray-400 text-xs">Speed</div>
+                    <div className="border-b" style={{ borderColor: `${currentTheme.textColor}40` }}>
+                      <div className="px-4 py-2 text-xs" style={{ color: `${currentTheme.textColor}80` }}>Speed</div>
                       {[0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2].map((rate) => (
                         <button
                           key={rate}
@@ -577,9 +690,17 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                             e.stopPropagation();
                             changePlaybackRate(rate);
                           }}
-                          className={`w-full px-4 py-2 text-left text-sm hover:bg-player-red hover:bg-opacity-20 transition-colors ${
-                            playbackRate === rate ? 'text-player-red' : 'text-white'
-                          }`}
+                          className="w-full px-4 py-2 text-left text-sm transition-colors"
+                          style={{
+                            color: playbackRate === rate ? (currentTheme.accentColor || currentTheme.secondaryColor) : currentTheme.textColor,
+                            backgroundColor: 'transparent'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor = `${currentTheme.accentColor || currentTheme.secondaryColor}33`;
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = 'transparent';
+                          }}
                         >
                           {rate}x {rate === 1 && '(Normal)'}
                         </button>
@@ -588,16 +709,24 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
 
                     {/* Subtitles */}
                     {showSubtitles && currentSubtitles.length > 0 && (
-                      <div className="border-b border-gray-800">
-                        <div className="px-4 py-2 text-gray-400 text-xs">Subtitles</div>
+                      <div className="border-b" style={{ borderColor: `${currentTheme.textColor}40` }}>
+                        <div className="px-4 py-2 text-xs" style={{ color: `${currentTheme.textColor}80` }}>Subtitles</div>
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
                             handleSubtitleChange(-1);
                           }}
-                          className={`w-full px-4 py-2 text-left text-sm hover:bg-player-red hover:bg-opacity-20 transition-colors ${
-                            activeSubtitle === -1 ? 'text-player-red' : 'text-white'
-                          }`}
+                          className="w-full px-4 py-2 text-left text-sm transition-colors"
+                          style={{
+                            color: activeSubtitle === -1 ? (currentTheme.accentColor || currentTheme.secondaryColor) : currentTheme.textColor,
+                            backgroundColor: 'transparent'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor = `${currentTheme.accentColor || currentTheme.secondaryColor}33`;
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = 'transparent';
+                          }}
                         >
                           Off
                         </button>
@@ -608,9 +737,17 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                               e.stopPropagation();
                               handleSubtitleChange(index);
                             }}
-                            className={`w-full px-4 py-2 text-left text-sm hover:bg-player-red hover:bg-opacity-20 transition-colors ${
-                              activeSubtitle === index ? 'text-player-red' : 'text-white'
-                            }`}
+                            className="w-full px-4 py-2 text-left text-sm transition-colors"
+                            style={{
+                              color: activeSubtitle === index ? (currentTheme.accentColor || currentTheme.secondaryColor) : currentTheme.textColor,
+                              backgroundColor: 'transparent'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.backgroundColor = `${currentTheme.accentColor || currentTheme.secondaryColor}33`;
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor = 'transparent';
+                            }}
                           >
                             {subtitle.label}
                           </button>
@@ -620,8 +757,8 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
 
                     {/* Quality */}
                     {showQuality && uniqueQualities.length > 1 && (
-                      <div>
-                        <div className="px-4 py-2 text-gray-400 text-xs">Quality</div>
+                      <div className="border-b" style={{ borderColor: `${currentTheme.textColor}40` }}>
+                        <div className="px-4 py-2 text-xs" style={{ color: `${currentTheme.textColor}80` }}>Quality</div>
                         {uniqueQualities.map((quality) => (
                           <button
                             key={quality}
@@ -629,13 +766,48 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                               e.stopPropagation();
                               handleQualityChange(quality);
                             }}
-                            className={`w-full px-4 py-2 text-left text-sm hover:bg-player-red hover:bg-opacity-20 transition-colors capitalize ${
-                              currentQuality === quality ? 'text-player-red' : 'text-white'
-                            }`}
+                            className="w-full px-4 py-2 text-left text-sm transition-colors capitalize"
+                            style={{
+                              color: currentQuality === quality ? (currentTheme.accentColor || currentTheme.secondaryColor) : currentTheme.textColor,
+                              backgroundColor: 'transparent'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.backgroundColor = `${currentTheme.accentColor || currentTheme.secondaryColor}33`;
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor = 'transparent';
+                            }}
                           >
                             {quality}
                           </button>
                         ))}
+                      </div>
+                    )}
+
+                    {/* Theme Selector */}
+                    {themeConfig?.showThemeSelector !== false && (
+                      <div>
+                        <div className="px-4 py-2 text-xs" style={{ color: `${currentTheme.textColor}80` }}>Theme</div>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowThemeSelector(!showThemeSelector);
+                          }}
+                          className="w-full px-4 py-2 text-left text-sm transition-colors flex items-center gap-2"
+                          style={{
+                            color: currentTheme.textColor,
+                            backgroundColor: 'transparent'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor = `${currentTheme.accentColor || currentTheme.secondaryColor}33`;
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = 'transparent';
+                          }}
+                        >
+                          <Palette className="w-4 h-4" strokeWidth={1} />
+                          {currentTheme.name}
+                        </button>
                       </div>
                     )}
                   </div>
@@ -649,7 +821,14 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                 e.stopPropagation();
                 toggleFullscreen();
               }}
-              className="text-white hover:text-player-red transition-colors"
+              className="transition-colors"
+              style={{ color: currentTheme.textColor }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = currentTheme.accentColor || currentTheme.secondaryColor;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = currentTheme.textColor;
+              }}
             >
               {isFullscreen ? (
                 <Minimize className="w-5 h-5" strokeWidth={1} />
@@ -668,12 +847,20 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
             e.stopPropagation();
             setShowPlaylistSidebar(!showPlaylistSidebar);
           }}
-          className={`absolute top-1/2 -translate-y-1/2 bg-black bg-opacity-50 hover:bg-opacity-80 rounded-full p-2 text-white transition-all duration-300 z-20 ${
+          className={`absolute top-1/2 -translate-y-1/2 rounded-full p-2 transition-all duration-300 z-20 ${
             showControls ? 'opacity-100' : 'opacity-0'
           }`}
           style={{
             right: showPlaylistSidebar ? '320px' : '16px',
             transition: 'right 0.3s ease, opacity 0.3s ease',
+            backgroundColor: `${currentTheme.primaryColor}80`,
+            color: currentTheme.textColor,
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = `${currentTheme.primaryColor}CC`;
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = `${currentTheme.primaryColor}80`;
           }}
         >
           <ChevronLeft
@@ -688,14 +875,17 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
       {/* Playlist Sidebar */}
       {showPlaylist && playlist.length > 0 && (
         <div
-          className={`absolute top-0 right-0 bottom-0 w-80 bg-black bg-opacity-90 transform transition-all duration-300 z-30 ${
+          className={`absolute top-0 right-0 bottom-0 w-80 transform transition-all duration-300 z-30 ${
             showPlaylistSidebar ? 'translate-x-0' : 'translate-x-full'
           }`}
+          style={{
+            backgroundColor: `${currentTheme.primaryColor}E6`
+          }}
           onClick={(e) => e.stopPropagation()}
         >
           <div className="h-full flex flex-col">
-            <div className="px-4 py-3 border-b border-gray-800">
-              <h3 className="text-white font-semibold">Playlist</h3>
+            <div className="px-4 py-3 border-b" style={{ borderColor: currentTheme.primaryColor }}>
+              <h3 className="font-semibold" style={{ color: currentTheme.textColor }}>Playlist</h3>
             </div>
             <div className="flex-1 overflow-y-auto playlist-scrollbar">
               {playlist.map((item, index) => (
@@ -705,9 +895,19 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                     e.stopPropagation();
                     selectPlaylistItem(index);
                   }}
-                  className={`px-4 py-3 cursor-pointer hover:bg-player-red hover:bg-opacity-20 transition-colors border-b border-gray-900 ${
-                    index === currentPlaylistIndex ? 'bg-player-red bg-opacity-30' : ''
-                  }`}
+                  className="px-4 py-3 cursor-pointer transition-colors border-b"
+                  style={{
+                    borderColor: currentTheme.primaryColor,
+                    backgroundColor: index === currentPlaylistIndex ? `${currentTheme.accentColor || currentTheme.secondaryColor}4D` : 'transparent'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (index !== currentPlaylistIndex) {
+                      e.currentTarget.style.backgroundColor = `${currentTheme.accentColor || currentTheme.secondaryColor}33`;
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = index === currentPlaylistIndex ? `${currentTheme.accentColor || currentTheme.secondaryColor}4D` : 'transparent';
+                  }}
                 >
                   <div className="flex gap-3">
                     {item.thumbnail && (
@@ -719,19 +919,173 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                     )}
                     <div className="flex-1 min-w-0">
                       <div
-                        className={`text-sm truncate ${
-                          index === currentPlaylistIndex ? 'text-player-red' : 'text-white'
-                        }`}
+                        className="text-sm truncate"
+                        style={{
+                          color: index === currentPlaylistIndex ? (currentTheme.accentColor || currentTheme.secondaryColor) : currentTheme.textColor
+                        }}
                       >
                         {item.title}
                       </div>
-                      <div className="text-xs text-gray-400 mt-1">
+                      <div className="text-xs mt-1" style={{ color: `${currentTheme.textColor}80` }}>
                         {index + 1} / {playlist.length}
                       </div>
                     </div>
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Theme Selector Modal */}
+      {showThemeSelector && (
+        <div
+          className="absolute inset-0 flex items-center justify-center z-50"
+          style={{
+            backgroundColor: `${currentTheme.primaryColor}BF`
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowThemeSelector(false);
+            }
+          }}
+        >
+          <div 
+            className="rounded-lg p-6 max-w-md w-full mx-4 max-h-[80vh] overflow-y-auto settings-scrollbar"
+            style={{
+              backgroundColor: `${currentTheme.primaryColor}F2`
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold" style={{ color: currentTheme.textColor }}>Select Theme</h3>
+              <button
+                onClick={() => setShowThemeSelector(false)}
+                className="transition-colors"
+                style={{ color: `${currentTheme.textColor}80` }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = currentTheme.textColor;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = `${currentTheme.textColor}80`;
+                }}
+              >
+                ×
+              </button>
+            </div>
+
+            {/* Available Themes */}
+            <div className="mb-6">
+              <h4 className="text-sm mb-3" style={{ color: `${currentTheme.textColor}80` }}>Available Themes</h4>
+              <div className="grid grid-cols-2 gap-2">
+                {availableThemes.map((theme) => (
+                  <button
+                    key={theme.name}
+                    onClick={() => handleThemeChange(theme)}
+                    className="p-3 rounded-lg border transition-all hover:scale-105"
+                    style={{
+                      borderColor: currentTheme.name === theme.name ? currentTheme.textColor : `${currentTheme.textColor}40`,
+                      backgroundColor: currentTheme.name === theme.name ? `${currentTheme.textColor}1A` : 'transparent'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (currentTheme.name !== theme.name) {
+                        e.currentTarget.style.borderColor = `${currentTheme.textColor}80`;
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderColor = currentTheme.name === theme.name ? currentTheme.textColor : `${currentTheme.textColor}40`;
+                    }}
+                    style={{
+                      backgroundColor: theme.backgroundColor || theme.primaryColor,
+                      color: theme.textColor,
+                    }}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-medium">{theme.name}</span>
+                      <div className="flex gap-1">
+                        <div
+                          className="w-3 h-3 rounded-full border"
+                          style={{ 
+                            backgroundColor: theme.primaryColor,
+                            borderColor: `${currentTheme.textColor}80`
+                          }}
+                        />
+                        <div
+                          className="w-3 h-3 rounded-full border"
+                          style={{ 
+                            backgroundColor: theme.secondaryColor,
+                            borderColor: `${currentTheme.textColor}80`
+                          }}
+                        />
+                      </div>
+                    </div>
+                    <div className="text-xs opacity-75 text-left">
+                      Preview theme
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Custom Theme Creator */}
+            <div>
+              <h4 className="text-sm mb-3" style={{ color: `${currentTheme.textColor}80` }}>Create Custom Theme</h4>
+              <div className="space-y-3">
+                <input
+                  type="text"
+                  placeholder="Theme name"
+                  value={customThemeInputs.name}
+                  onChange={(e) => setCustomThemeInputs(prev => ({ ...prev, name: e.target.value }))}
+                  className="w-full px-3 py-2 rounded border focus:outline-none text-sm"
+                  style={{
+                    backgroundColor: `${currentTheme.primaryColor}80`,
+                    color: currentTheme.textColor,
+                    borderColor: `${currentTheme.textColor}40`
+                  }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.borderColor = currentTheme.textColor;
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.borderColor = `${currentTheme.textColor}40`;
+                  }}
+                />
+                <div className="flex gap-3">
+                  <div className="flex-1">
+                    <label className="block text-xs mb-1" style={{ color: `${currentTheme.textColor}80` }}>Primary Color</label>
+                    <input
+                      type="color"
+                      value={customThemeInputs.primaryColor}
+                      onChange={(e) => setCustomThemeInputs(prev => ({ ...prev, primaryColor: e.target.value }))}
+                      className="w-full h-10 rounded border cursor-pointer"
+                      style={{
+                        backgroundColor: `${currentTheme.primaryColor}80`,
+                        borderColor: `${currentTheme.textColor}40`
+                      }}
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <label className="block text-xs mb-1" style={{ color: `${currentTheme.textColor}80` }}>Secondary Color</label>
+                    <input
+                      type="color"
+                      value={customThemeInputs.secondaryColor}
+                      onChange={(e) => setCustomThemeInputs(prev => ({ ...prev, secondaryColor: e.target.value }))}
+                      className="w-full h-10 rounded border cursor-pointer"
+                      style={{
+                        backgroundColor: `${currentTheme.primaryColor}80`,
+                        borderColor: `${currentTheme.textColor}40`
+                      }}
+                    />
+                  </div>
+                </div>
+                <button
+                  onClick={handleCustomThemeCreate}
+                  disabled={!customThemeInputs.name || !customThemeInputs.primaryColor || !customThemeInputs.secondaryColor}
+                  className="w-full py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded text-sm font-medium transition-colors"
+                >
+                  Create & Apply Theme
+                </button>
+              </div>
             </div>
           </div>
         </div>

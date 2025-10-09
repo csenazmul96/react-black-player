@@ -4,6 +4,22 @@ export interface VideoSource {
   quality?: string;
 }
 
+export interface Theme {
+  name: string;
+  primaryColor: string;
+  secondaryColor: string;
+  backgroundColor?: string;
+  textColor?: string;
+  accentColor?: string;
+}
+
+export interface ThemeConfig {
+  showThemeSelector?: boolean;
+  availableThemes?: Theme[];
+  customTheme?: Theme;
+  defaultTheme?: string;
+}
+
 export interface PlaylistItem {
   id: string;
   title: string;
@@ -43,6 +59,9 @@ export interface VideoPlayerConfig {
   width?: string | number;
   height?: string | number;
   aspectRatio?: string;
+  
+  // Theme
+  themeConfig?: ThemeConfig;
 }
 
 export interface VideoPlayerEvents {
@@ -57,6 +76,7 @@ export interface VideoPlayerEvents {
   onPlaybackRateChange?: (rate: number) => void;
   onFullscreenChange?: (isFullscreen: boolean) => void;
   onPlaylistItemChange?: (item: PlaylistItem, index: number) => void;
+  onThemeChange?: (theme: Theme) => void;
   onError?: (error: any) => void;
   onLoadedMetadata?: () => void;
   onCanPlay?: () => void;

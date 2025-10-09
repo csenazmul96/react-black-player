@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import ReactDOM from 'react-dom/client';
 import { VideoPlayer } from '../src/VideoPlayer';
-import type { PlaylistItem, VideoSource, SubtitleTrack } from '../src/types';
+import type { PlaylistItem, VideoSource, SubtitleTrack, Theme } from '../src/types';
+import { defaultThemes } from '../src/themes';
 import '../src/styles.css';
 
 const App: React.FC = () => {
+  const [currentTheme, setCurrentTheme] = useState<Theme>(defaultThemes[0]);
   // Sample video sources with multiple qualities
   const videoSources: VideoSource[] = [
     {
@@ -110,7 +112,11 @@ const App: React.FC = () => {
         </p>
 
         <div className="bg-gray-800 rounded-lg p-6 mb-8">
-          <h2 className="text-2xl font-semibold text-white mb-4">Full Featured Player</h2>
+          <h2 className="text-2xl font-semibold text-white mb-4">Full Featured Player with Theme Support</h2>
+          <div className="mb-4 p-3 bg-gray-700 rounded">
+            <p className="text-white text-sm mb-2">Current Theme: <span className="font-semibold">{currentTheme.name}</span></p>
+            <p className="text-gray-300 text-xs">Click the theme button (palette icon) in the player settings to change themes or create custom themes!</p>
+          </div>
           <VideoPlayer
             sources={videoSources}
             poster="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/images/BigBuckBunny.jpg"
@@ -125,6 +131,11 @@ const App: React.FC = () => {
             showNextPrev={true}
             autoPlayNext={true}
             aspectRatio="16/9"
+            themeConfig={{
+              showThemeSelector: true,
+              availableThemes: defaultThemes,
+              defaultTheme: 'Dark'
+            }}
             onPlay={() => console.log('Video played')}
             onPause={() => console.log('Video paused')}
             onTimeUpdate={(time) => console.log('Time update:', time)}
@@ -133,12 +144,39 @@ const App: React.FC = () => {
             }
             onPlaybackRateChange={(rate) => console.log('Playback rate:', rate)}
             onQualityChange={(quality) => console.log('Quality changed:', quality)}
+            onThemeChange={(theme) => {
+              console.log('Theme changed:', theme);
+              setCurrentTheme(theme);
+            }}
             onPlaylistItemChange={(item, index) =>
               console.log('Playlist item changed:', { item, index })
             }
             onFullscreenChange={(isFullscreen) =>
               console.log('Fullscreen:', isFullscreen)
             }
+          />
+        </div>
+
+        <div className="bg-gray-800 rounded-lg p-6 mb-8">
+          <h2 className="text-2xl font-semibold text-white mb-4">Blue Theme Example (Fixed Theme)</h2>
+          <p className="text-gray-300 text-sm mb-4">This player uses a fixed Blue theme and doesn't show the theme selector.</p>
+          <VideoPlayer
+            sources={[videoSources[0]]}
+            poster="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/images/BigBuckBunny.jpg"
+            showTime={true}
+            showVolume={true}
+            showSettings={true}
+            showQuality={false}
+            showSubtitles={false}
+            showPlaylist={false}
+            showNextPrev={false}
+            aspectRatio="16/9"
+            themeConfig={{
+              showThemeSelector: false,
+              defaultTheme: 'Blue'
+            }}
+            onPlay={() => console.log('Blue theme player played')}
+            onPause={() => console.log('Blue theme player paused')}
           />
         </div>
 
@@ -188,7 +226,13 @@ const App: React.FC = () => {
               <span className="text-red-500">✓</span> Customizable options
             </li>
             <li className="flex items-center gap-2">
-              <span className="text-red-500">✓</span> Pure black theme
+              <span className="text-red-500">✓</span> Multiple themes with customization
+            </li>
+            <li className="flex items-center gap-2">
+              <span className="text-red-500">✓</span> Custom theme creation
+            </li>
+            <li className="flex items-center gap-2">
+              <span className="text-red-500">✓</span> Theme selection UI
             </li>
             <li className="flex items-center gap-2">
               <span className="text-red-500">✓</span> Thin lucide icons
@@ -200,6 +244,7 @@ const App: React.FC = () => {
           <h2 className="text-2xl font-semibold text-white mb-4">Usage Example</h2>
           <pre className="bg-gray-900 text-gray-300 p-4 rounded-lg overflow-x-auto text-sm">
 {`import { VideoPlayer } from 'react-black-player';
+import { defaultThemes } from 'react-black-player';
 
 function App() {
   const sources = [
@@ -218,6 +263,13 @@ function App() {
     },
   ];
 
+  // Custom theme example
+  const customTheme = {
+    name: 'My Custom Theme',
+    primaryColor: '#1a1a1a',
+    secondaryColor: '#ff6b35'
+  };
+
   return (
     <VideoPlayer
       sources={sources}
@@ -227,8 +279,15 @@ function App() {
       showSettings={true}
       showQuality={true}
       showPlaylist={true}
+      themeConfig={{
+        showThemeSelector: true,
+        availableThemes: defaultThemes,
+        customTheme: customTheme,
+        defaultTheme: 'Dark'
+      }}
       onPlay={() => console.log('Playing')}
       onPause={() => console.log('Paused')}
+      onThemeChange={(theme) => console.log('Theme changed:', theme)}
     />
   );
 }`}

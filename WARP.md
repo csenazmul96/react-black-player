@@ -20,8 +20,9 @@ The demo is located in `/demo/main.tsx` and serves as both documentation and tes
 ## Architecture and Structure
 
 ### Core Components
-- **VideoPlayer.tsx** (740+ lines) - The main component containing all player logic
-- **types.ts** - TypeScript definitions for all interfaces and props
+- **VideoPlayer.tsx** (900+ lines) - The main component containing all player logic and theme support
+- **types.ts** - TypeScript definitions for all interfaces, props, and theme configuration
+- **themes.ts** - Theme utilities, default themes, and helper functions
 - **index.tsx** - Library entry point exporting the component and types
 - **styles.css** - Custom CSS for scrollbars and Tailwind imports
 
@@ -36,6 +37,8 @@ The demo is located in `/demo/main.tsx` and serves as both documentation and tes
 **Responsive Controls**: Auto-hiding controls with mouse interaction detection, plus fullscreen support with proper state management.
 
 **Playlist Architecture**: Sidebar-based playlist with thumbnail support, auto-play next functionality, and smooth transitions between videos.
+
+**Theme System**: Dynamic theming system with predefined themes and custom theme creation. Supports real-time theme switching with CSS variable injection.
 
 ### Technology Stack
 - **React 18** - Component framework (peer dependency)
@@ -64,10 +67,33 @@ When working with VideoPlayer, key props include:
 - `sources[]` - Array of video sources with optional quality labels
 - `playlist[]` - Array of PlaylistItem objects with id, title, sources, thumbnails
 - `subtitles[]` - Array of subtitle tracks with src, label, srclang
-- Event callbacks for all player interactions
+- `themeConfig` - Theme configuration object for customizing player appearance
+- Event callbacks for all player interactions (including onThemeChange)
 - UI control toggles (showTime, showVolume, showSettings, etc.)
 
 The component is fully controlled - it manages its own state but communicates all changes through event callbacks.
+
+### Theme Configuration
+
+The theme system supports:
+- **Default Themes**: Dark, Light, Blue, Green, Purple, Orange
+- **Custom Themes**: User-defined themes with primary/secondary colors
+- **Theme Selector**: Optional UI for users to change themes
+- **CSS Variables**: Dynamic styling using CSS custom properties
+
+Example theme configuration:
+```typescript
+themeConfig={{
+  showThemeSelector: true,
+  availableThemes: defaultThemes,
+  customTheme: {
+    name: 'Custom',
+    primaryColor: '#1a1a1a',
+    secondaryColor: '#ff6b35'
+  },
+  defaultTheme: 'Dark'
+}}
+```
 
 ## Development Notes
 
@@ -77,3 +103,6 @@ The component is fully controlled - it manages its own state but communicates al
 - The component handles both single videos and playlists seamlessly
 - Subtitle tracks are loaded as HTML5 track elements
 - Quality switching maintains playback position and playing state
+- Theme changes are applied instantly using CSS variables
+- Custom themes automatically calculate appropriate text colors based on background brightness
+- Theme selector modal provides both predefined and custom theme creation

@@ -117,7 +117,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
         hls.loadSource(mainSource.src);
         hls.attachMedia(video);
         
-        hls.on(Hls.Events.ERROR, (event, data) => {
+        hls.on(Hls.Events.ERROR, (_event, data) => {
           if (data.fatal) {
             onError?.(data);
           }
@@ -589,7 +589,9 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                 e.currentTarget.style.color = currentTheme.accentColor || currentTheme.secondaryColor;
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.color = currentTheme.textColor;
+                  if (currentTheme.textColor != null) {
+                      e.currentTarget.style.color = currentTheme.textColor;
+                  }
               }}
             >
               {isPlaying ? (
@@ -613,7 +615,9 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                     e.currentTarget.style.color = currentTheme.accentColor || currentTheme.secondaryColor;
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.color = currentTheme.textColor;
+                      if (currentTheme.textColor != null) {
+                          e.currentTarget.style.color = currentTheme.textColor;
+                      }
                   }}
                 >
                   <SkipBack className="w-5 h-5" strokeWidth={1} />
@@ -629,7 +633,9 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                     e.currentTarget.style.color = currentTheme.accentColor || currentTheme.secondaryColor;
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.color = currentTheme.textColor;
+                      if (currentTheme.textColor != null) {
+                          e.currentTarget.style.color = currentTheme.textColor;
+                      }
                   }}
                 >
                   <SkipForward className="w-5 h-5" strokeWidth={1} />
@@ -651,7 +657,9 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                     e.currentTarget.style.color = currentTheme.accentColor || currentTheme.secondaryColor;
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.color = currentTheme.textColor;
+                      if (currentTheme.textColor != null) {
+                          e.currentTarget.style.color = currentTheme.textColor;
+                      }
                   }}
                 >
                   {isMuted || volume === 0 ? (
@@ -700,7 +708,9 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                     e.currentTarget.style.color = currentTheme.accentColor || currentTheme.secondaryColor;
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.color = currentTheme.textColor;
+                      if (currentTheme.textColor != null) {
+                          e.currentTarget.style.color = currentTheme.textColor;
+                      }
                   }}
                 >
                   <Settings className="w-5 h-5" strokeWidth={1} />
@@ -861,7 +871,9 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                 e.currentTarget.style.color = currentTheme.accentColor || currentTheme.secondaryColor;
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.color = currentTheme.textColor;
+                  if (currentTheme.textColor != null) {
+                      e.currentTarget.style.color = currentTheme.textColor;
+                  }
               }}
             >
               {isFullscreen ? (
@@ -999,7 +1011,9 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                 className="transition-colors"
                 style={{ color: `${currentTheme.textColor}80` }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.color = currentTheme.textColor;
+                    if (currentTheme.textColor != null) {
+                        e.currentTarget.style.color = currentTheme.textColor;
+                    }
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.color = `${currentTheme.textColor}80`;
@@ -1028,7 +1042,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                       }
                     }}
                     onMouseLeave={(e) => {
-                      e.currentTarget.style.borderColor = currentTheme.name === theme.name ? currentTheme.textColor : `${currentTheme.textColor}40`;
+                      e.currentTarget.style.borderColor = currentTheme.name === theme.name ? currentTheme.textColor : `${currentTheme.textColor}40` as string;
                     }}
                     style={{
                       backgroundColor: theme.backgroundColor || theme.primaryColor,
@@ -1078,7 +1092,9 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                     borderColor: `${currentTheme.textColor}40`
                   }}
                   onFocus={(e) => {
-                    e.currentTarget.style.borderColor = currentTheme.textColor;
+                      if (currentTheme.textColor != null) {
+                          e.currentTarget.style.borderColor = currentTheme.textColor;
+                      }
                   }}
                   onBlur={(e) => {
                     e.currentTarget.style.borderColor = `${currentTheme.textColor}40`;

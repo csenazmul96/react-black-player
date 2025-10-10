@@ -16,7 +16,7 @@ export interface Theme {
 export interface ThemeConfig {
   showThemeSelector?: boolean;
   availableThemes?: Theme[];
-  customTheme?: Theme;
+  customThemes?: Theme[];
   defaultTheme?: string;
 }
 

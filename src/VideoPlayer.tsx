@@ -80,18 +80,13 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const [showCenterPlay, setShowCenterPlay] = useState(!autoPlay);
 
   // Theme state
-  const availableThemes = themeConfig?.availableThemes || defaultThemes;
+  const availableThemes = [...(themeConfig?.availableThemes || defaultThemes), ...(themeConfig?.customThemes || [])];
   const [currentTheme, setCurrentTheme] = useState<Theme>(() => {
-    if (themeConfig?.customTheme) {
-      return themeConfig.customTheme;
-    }
     if (themeConfig?.defaultTheme) {
       return getThemeByName(availableThemes, themeConfig.defaultTheme) || availableThemes[0];
     }
     return availableThemes[0]; // Default to first theme (Dark)
   });
-  const [showThemeSelector, setShowThemeSelector] = useState(false);
-  const [customThemeInputs, setCustomThemeInputs] = useState({ name: '', primaryColor: '#000000', secondaryColor: '#dc143c' });
 
   // Initialize HLS if needed
   useEffect(() => {
@@ -146,22 +141,9 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   // Theme handlers
   const handleThemeChange = useCallback((theme: Theme) => {
     setCurrentTheme(theme);
-    setShowThemeSelector(false);
     setShowSettingsMenu(false);
     onThemeChange?.(theme);
   }, [onThemeChange]);
-
-  const handleCustomThemeCreate = useCallback(() => {
-    if (customThemeInputs.name && customThemeInputs.primaryColor && customThemeInputs.secondaryColor) {
-      const customTheme = createCustomTheme(
-        customThemeInputs.name,
-        customThemeInputs.primaryColor,
-        customThemeInputs.secondaryColor
-      );
-      handleThemeChange(customTheme);
-      setCustomThemeInputs({ name: '', primaryColor: '#000000', secondaryColor: '#dc143c' });
-    }
-  }, [customThemeInputs, handleThemeChange]);
 
   // Auto-hide controls
   const resetHideControlsTimer = useCallback(() => {
@@ -473,6 +455,8 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     }
   }, [showPlaylistSidebar]);
 
+  const volumeBackground = `linear-gradient(to right, ${currentTheme.secondaryColor} ${volume * 100}%, rgba(255, 255, 255, 0.3) ${volume * 100}%)`;
+
   return (
     <div
       ref={containerRef}
@@ -678,7 +662,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                   onClick={(e) => e.stopPropagation()}
                   className="w-0 group-hover:w-20 transition-all duration-300 h-1 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full"
                   style={{
-                    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+                    background: volumeBackground,
                     '--webkit-slider-thumb-background': currentTheme.accentColor || currentTheme.secondaryColor
                   }}
                 />
@@ -832,26 +816,26 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                     {themeConfig?.showThemeSelector !== false && (
                       <div>
                         <div className="px-4 py-2 text-xs" style={{ color: `${currentTheme.textColor}80` }}>Theme</div>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setShowThemeSelector(!showThemeSelector);
-                          }}
-                          className="w-full px-4 py-2 text-left text-sm transition-colors flex items-center gap-2"
-                          style={{
-                            color: currentTheme.textColor,
-                            backgroundColor: 'transparent'
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.backgroundColor = `${currentTheme.accentColor || currentTheme.secondaryColor}33`;
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.backgroundColor = 'transparent';
-                          }}
-                        >
-                          <Palette className="w-4 h-4" strokeWidth={1} />
-                          {currentTheme.name}
-                        </button>
+                        {availableThemes.map((theme) => (
+                          <button
+                            key={theme.name}
+                            onClick={() => handleThemeChange(theme)}
+                            className="w-full px-4 py-2 text-left text-sm transition-colors flex items-center gap-2"
+                            style={{
+                              color: currentTheme.name === theme.name ? (currentTheme.accentColor || currentTheme.secondaryColor) : currentTheme.textColor,
+                              backgroundColor: 'transparent'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.backgroundColor = `${currentTheme.accentColor || currentTheme.secondaryColor}33`;
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor = 'transparent';
+                            }}
+                          >
+                            <Palette className="w-4 h-4" strokeWidth={1} />
+                            {theme.name}
+                          </button>
+                        ))}
                       </div>
                     )}
                   </div>
@@ -979,163 +963,6 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                   </div>
                 </div>
               ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Theme Selector Modal */}
-      {showThemeSelector && (
-        <div
-          className="absolute inset-0 flex items-center justify-center z-50"
-          style={{
-            backgroundColor: `${currentTheme.primaryColor}BF`
-          }}
-          onClick={(e) => {
-            if (e.target === e.currentTarget) {
-              setShowThemeSelector(false);
-            }
-          }}
-        >
-          <div 
-            className="rounded-lg p-6 max-w-md w-full mx-4 max-h-[80vh] overflow-y-auto settings-scrollbar"
-            style={{
-              backgroundColor: `${currentTheme.primaryColor}F2`
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold" style={{ color: currentTheme.textColor }}>Select Theme</h3>
-              <button
-                onClick={() => setShowThemeSelector(false)}
-                className="transition-colors"
-                style={{ color: `${currentTheme.textColor}80` }}
-                onMouseEnter={(e) => {
-                    if (currentTheme.textColor != null) {
-                        e.currentTarget.style.color = currentTheme.textColor;
-                    }
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.color = `${currentTheme.textColor}80`;
-                }}
-              >
-                ×
-              </button>
-            </div>
-
-            {/* Available Themes */}
-            <div className="mb-6">
-              <h4 className="text-sm mb-3" style={{ color: `${currentTheme.textColor}80` }}>Available Themes</h4>
-              <div className="grid grid-cols-2 gap-2">
-                {availableThemes.map((theme) => (
-                  <button
-                    key={theme.name}
-                    onClick={() => handleThemeChange(theme)}
-                    className="p-3 rounded-lg border transition-all hover:scale-105"
-                    style={{
-                      borderColor: currentTheme.name === theme.name ? currentTheme.textColor : `${currentTheme.textColor}40`,
-                      backgroundColor: currentTheme.name === theme.name ? `${currentTheme.textColor}1A` : 'transparent'
-                    }}
-                    onMouseEnter={(e) => {
-                      if (currentTheme.name !== theme.name) {
-                        e.currentTarget.style.borderColor = `${currentTheme.textColor}80`;
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.borderColor = currentTheme.name === theme.name ? currentTheme.textColor : `${currentTheme.textColor}40` as string;
-                    }}
-                    style={{
-                      backgroundColor: theme.backgroundColor || theme.primaryColor,
-                      color: theme.textColor,
-                    }}
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-medium">{theme.name}</span>
-                      <div className="flex gap-1">
-                        <div
-                          className="w-3 h-3 rounded-full border"
-                          style={{ 
-                            backgroundColor: theme.primaryColor,
-                            borderColor: `${currentTheme.textColor}80`
-                          }}
-                        />
-                        <div
-                          className="w-3 h-3 rounded-full border"
-                          style={{ 
-                            backgroundColor: theme.secondaryColor,
-                            borderColor: `${currentTheme.textColor}80`
-                          }}
-                        />
-                      </div>
-                    </div>
-                    <div className="text-xs opacity-75 text-left">
-                      Preview theme
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Custom Theme Creator */}
-            <div>
-              <h4 className="text-sm mb-3" style={{ color: `${currentTheme.textColor}80` }}>Create Custom Theme</h4>
-              <div className="space-y-3">
-                <input
-                  type="text"
-                  placeholder="Theme name"
-                  value={customThemeInputs.name}
-                  onChange={(e) => setCustomThemeInputs(prev => ({ ...prev, name: e.target.value }))}
-                  className="w-full px-3 py-2 rounded border focus:outline-none text-sm"
-                  style={{
-                    backgroundColor: `${currentTheme.primaryColor}80`,
-                    color: currentTheme.textColor,
-                    borderColor: `${currentTheme.textColor}40`
-                  }}
-                  onFocus={(e) => {
-                      if (currentTheme.textColor != null) {
-                          e.currentTarget.style.borderColor = currentTheme.textColor;
-                      }
-                  }}
-                  onBlur={(e) => {
-                    e.currentTarget.style.borderColor = `${currentTheme.textColor}40`;
-                  }}
-                />
-                <div className="flex gap-3">
-                  <div className="flex-1">
-                    <label className="block text-xs mb-1" style={{ color: `${currentTheme.textColor}80` }}>Primary Color</label>
-                    <input
-                      type="color"
-                      value={customThemeInputs.primaryColor}
-                      onChange={(e) => setCustomThemeInputs(prev => ({ ...prev, primaryColor: e.target.value }))}
-                      className="w-full h-10 rounded border cursor-pointer"
-                      style={{
-                        backgroundColor: `${currentTheme.primaryColor}80`,
-                        borderColor: `${currentTheme.textColor}40`
-                      }}
-                    />
-                  </div>
-                  <div className="flex-1">
-                    <label className="block text-xs mb-1" style={{ color: `${currentTheme.textColor}80` }}>Secondary Color</label>
-                    <input
-                      type="color"
-                      value={customThemeInputs.secondaryColor}
-                      onChange={(e) => setCustomThemeInputs(prev => ({ ...prev, secondaryColor: e.target.value }))}
-                      className="w-full h-10 rounded border cursor-pointer"
-                      style={{
-                        backgroundColor: `${currentTheme.primaryColor}80`,
-                        borderColor: `${currentTheme.textColor}40`
-                      }}
-                    />
-                  </div>
-                </div>
-                <button
-                  onClick={handleCustomThemeCreate}
-                  disabled={!customThemeInputs.name || !customThemeInputs.primaryColor || !customThemeInputs.secondaryColor}
-                  className="w-full py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded text-sm font-medium transition-colors"
-                >
-                  Create & Apply Theme
-                </button>
-              </div>
             </div>
           </div>
         </div>

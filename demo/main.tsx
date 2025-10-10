@@ -101,6 +101,15 @@ const App: React.FC = () => {
     },
   ];
 
+  const customTheme: Theme = {
+    name: 'Custom',
+    primaryColor: '#2E8B57',
+    secondaryColor: '#FFD700',
+    backgroundColor: '#2E8B57',
+    textColor: '#FFFFFF',
+    accentColor: '#FFD700',
+  };
+
   return (
     <div className="min-h-screen bg-gray-900 py-8 px-4">
       <div className="max-w-4xl mx-auto">
@@ -121,6 +130,7 @@ const App: React.FC = () => {
           themeConfig={{
             showThemeSelector: true,
             availableThemes: defaultThemes,
+            customThemes: [customTheme],
             defaultTheme: 'Dark'
           }}
           onPlay={() => console.log('Video played')}

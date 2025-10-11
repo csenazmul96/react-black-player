@@ -85,6 +85,7 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
   const [preferredSubtitleLanguage, setPreferredSubtitleLanguage] = useState<string | null>(null);
   const [showCenterPlay, setShowCenterPlay] = useState(!autoPlay);
   const [videoObjectFit, setVideoObjectFit] = useState<'contain' | 'cover'>('contain');
+  const [isBuffering, setIsBuffering] = useState(false);
   
   // Settings dropdown states
   const [speedDropdownOpen, setSpeedDropdownOpen] = useState(true);
@@ -522,12 +523,21 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
     };
 
     const handleWaiting = () => {
-      setShowCenterPlay(true);
+      setIsBuffering(true);
     };
 
     const handlePlaying = () => {
       setIsPlaying(true);
       setShowCenterPlay(false);
+      setIsBuffering(false);
+    };
+
+    const handleCanPlayThrough = () => {
+      setIsBuffering(false);
+    };
+
+    const handleStalled = () => {
+      setIsBuffering(true);
     };
 
     const handleSeeked = () => {
@@ -545,6 +555,8 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
     video.addEventListener('pause', handlePause);
     video.addEventListener('waiting', handleWaiting);
     video.addEventListener('playing', handlePlaying);
+    video.addEventListener('canplaythrough', handleCanPlayThrough);
+    video.addEventListener('stalled', handleStalled);
 
     return () => {
       video.removeEventListener('timeupdate', handleTimeUpdate);
@@ -557,6 +569,8 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
       video.removeEventListener('pause', handlePause);
       video.removeEventListener('waiting', handleWaiting);
       video.removeEventListener('playing', handlePlaying);
+      video.removeEventListener('canplaythrough', handleCanPlayThrough);
+      video.removeEventListener('stalled', handleStalled);
     };
   }, [onTimeUpdate, onLoadedMetadata, onEnded, onCanPlay, onSeeking, autoPlayNext, playlist.length, playNextVideo]);
 
@@ -727,7 +741,7 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
       </video>
 
       {/* Center Play Button */}
-      {showCenterPlay && (
+      {showCenterPlay && !isBuffering && (
         <div
           className="absolute inset-0 flex items-center justify-center cursor-pointer z-10"
           onClick={(e) => {
@@ -749,6 +763,32 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
               fill={currentTheme.primaryColor}
               style={{ color: currentTheme.textColor }}
             />
+          </div>
+        </div>
+      )}
+
+      {/* Buffering Spinner */}
+      {isBuffering && (
+        <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
+          <div className="relative w-16 h-16">
+            {/* Spinning circle */}
+            <div 
+              className="absolute inset-0 border-4 border-transparent rounded-full animate-spin"
+              style={{ 
+                borderTopColor: currentTheme.accentColor || currentTheme.secondaryColor,
+                borderRightColor: currentTheme.accentColor || currentTheme.secondaryColor,
+                animationDuration: '0.8s'
+              }}
+            ></div>
+            {/* Inner circle for better visibility */}
+            <div 
+              className="absolute inset-2 border-4 border-transparent rounded-full animate-spin"
+              style={{ 
+                borderTopColor: `${currentTheme.accentColor || currentTheme.secondaryColor}80`,
+                animationDuration: '1.2s',
+                animationDirection: 'reverse'
+              }}
+            ></div>
           </div>
         </div>
       )}

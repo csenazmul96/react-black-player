@@ -34,9 +34,10 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
   showNextPrev = true,
   showPictureInPicture = false,
   showControls: showControlsProp = true,
-  protectSource = true,
+  protectSource = false,
   playlist = [],
-  autoPlayNext = true,
+  autoPlayNext = false,
+  loopCurrentVideo = false,
   autoPlay = false,
   muted = false,
   loop = false,
@@ -69,6 +70,15 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
   const progressBarRef = useRef<HTMLDivElement>(null);
   const isDraggingProgress = useRef<boolean>(false);
   const isSeeking = useRef<boolean>(false);
+  
+  // Use refs for props that need to be accessed in event handlers
+  // Initialize them properly and keep them updated
+  const autoPlayNextRef = useRef<boolean>(autoPlayNext);
+  const loopCurrentVideoRef = useRef<boolean>(loopCurrentVideo);
+  
+  // Update refs immediately whenever props change (before any render)
+  autoPlayNextRef.current = autoPlayNext;
+  loopCurrentVideoRef.current = loopCurrentVideo;
 
   // Player state
   const [isPlaying, setIsPlaying] = useState(false);
@@ -222,8 +232,7 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
       setIsVideoEnded(false);
       video.play().then(() => {
         onPlay?.();
-      }).catch((error) => {
-        console.error('Error playing video:', error);
+      }).catch(() => {
         setIsPlaying(false);
         setShowCenterPlay(true);
       });
@@ -233,8 +242,7 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
     if (video.paused) {
       video.play().then(() => {
         onPlay?.();
-      }).catch((error) => {
-        console.error('Error playing video:', error);
+      }).catch(() => {
         setIsPlaying(false);
         setShowCenterPlay(true);
       });
@@ -409,9 +417,7 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
         if (!document.fullscreenElement) {
           const container = containerRef.current;
           if (container) {
-            container.requestFullscreen().catch((err) => {
-              console.error('Error attempting to enable fullscreen:', err);
-            });
+            container.requestFullscreen().catch(() => {});
           }
         }
         break;
@@ -420,9 +426,7 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
         // Exit fullscreen - check actual document state, not component state
         // Don't preventDefault to allow browser's native ESC behavior
         if (document.fullscreenElement) {
-          document.exitFullscreen().catch((err) => {
-            console.error('Error attempting to exit fullscreen:', err);
-          });
+          document.exitFullscreen().catch(() => {});
         }
         break;
 
@@ -527,7 +531,7 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
         setIsPictureInPicture(true);
       }
     } catch (error) {
-      console.error('Picture-in-Picture error:', error);
+      // Picture-in-Picture not supported or failed
     }
   }, []);
 
@@ -551,9 +555,21 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
 
   // Playlist navigation
   const playNextVideo = useCallback(() => {
-    if (!playlist.length) return;
-    const nextIndex = (currentPlaylistIndex + 1) % playlist.length;
+    if (!playlist.length) return false;
+    
+    const isLastVideo = currentPlaylistIndex === playlist.length - 1;
+    
+    // If at last video, don't play next - stop and show reload button
+    if (isLastVideo) {
+      return false; // Indicates no next video to play
+    }
+    
+    // Calculate next index
+    const nextIndex = currentPlaylistIndex + 1;
     const nextItem = playlist[nextIndex];
+    
+    if (!nextItem) return false;
+    
     const nextSubtitles = nextItem.subtitles || [];
     const bestSubtitleIndex = findBestSubtitleMatch(nextSubtitles);
     
@@ -568,6 +584,8 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
     setTimeout(() => {
       videoRef.current?.play();
     }, 100);
+    
+    return true; // Indicates next video is playing
   }, [playlist, currentPlaylistIndex, onPlaylistItemChange, findBestSubtitleMatch]);
 
   const playPreviousVideo = useCallback(() => {
@@ -645,9 +663,6 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
       // Wait for tracks to be fully loaded
       const tryEnableSubtitle = (attempts = 0) => {
         if (!videoRef.current || attempts > 20) {
-          if (attempts > 20) {
-            console.warn('Failed to load subtitle tracks after 20 attempts');
-          }
           return;
         }
         
@@ -659,7 +674,6 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
           return;
         }
         
-        
         // Only auto-select if no subtitle is currently active (initial load or reset scenarios)
         if (activeSubtitle === -1) {
           const bestIndex = findBestSubtitleMatch(currentSubtitles);
@@ -670,7 +684,6 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
             }
             video.textTracks[bestIndex].mode = 'showing';
             setActiveSubtitle(bestIndex); // Update state so it persists
-          } else {
           }
         } else {
           // If we have an active subtitle index, make sure it's applied to the video tracks
@@ -693,7 +706,6 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
                 }, 50);
               }
             }, 50);
-          } else {
           }
         }
       };
@@ -743,11 +755,31 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
       setIsPlaying(false);
       setShowCenterPlay(true);
       
-      // Only set video ended if NOT auto-playing next
-      if (autoPlayNext && playlist.length > 0) {
-        playNextVideo();
-        setIsVideoEnded(false);
+      // Check if we should loop the current video - use ref to get latest value
+      if (loopCurrentVideoRef.current) {
+        // Loop current video by restarting it
+        const video = videoRef.current;
+        if (video) {
+          video.currentTime = 0;
+          video.play().catch(() => {
+            setIsPlaying(false);
+            setShowCenterPlay(true);
+          });
+          return; // Don't proceed to auto-play next or show ended state
+        }
+      }
+      
+      // Check if we should auto-play next video - use ref to get latest value
+      if (autoPlayNextRef.current && playlist.length > 0) {
+        const hasNextVideo = playNextVideo();
+        // If playNextVideo returns false (no more videos), show ended state
+        if (hasNextVideo === false) {
+          setIsVideoEnded(true);
+        } else {
+          setIsVideoEnded(false);
+        }
       } else {
+        // Not auto-playing next, show replay button
         setIsVideoEnded(true);
       }
       
@@ -837,7 +869,7 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
       video.removeEventListener('enterpictureinpicture', handleEnterPiP);
       video.removeEventListener('leavepictureinpicture', handleLeavePiP);
     };
-  }, [onTimeUpdate, onLoadedMetadata, onEnded, onCanPlay, onSeeking, autoPlayNext, playlist.length, playNextVideo]);
+  }, [onTimeUpdate, onLoadedMetadata, onEnded, onCanPlay, onSeeking, playlist.length, playNextVideo]);
 
   // Format time
   const formatTime = (time: number) => {
@@ -988,6 +1020,20 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
           />
         ))}
       </video>
+
+      {/* Poster overlay when video ends */}
+      {isVideoEnded && poster && (
+        <div
+          className="absolute inset-0 z-5 pointer-events-none"
+          style={{
+            backgroundImage: `url(${poster})`,
+            backgroundSize: 'contain',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat',
+            backgroundColor: '#000000',
+          }}
+        />
+      )}
 
       {/* Center Play Button */}
       {showCenterPlay && !isBuffering && (

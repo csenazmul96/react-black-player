@@ -164,6 +164,7 @@ const App: React.FC = () => {
           showNextPrev={true}
           showPictureInPicture={true}
           autoPlayNext={true}
+          loopCurrentVideo={false}
           aspectRatio="16/9"
           themeConfig={{
             showThemeSelector: true,
@@ -179,24 +180,9 @@ const App: React.FC = () => {
           //   quality: 'Calidad',
           //   theme: 'Tema',
           // }}
-          onPlay={() => console.log('Video played')}
-          onPause={() => console.log('Video paused')}
-          onTimeUpdate={(time) => console.log('Time update:', time)}
-          onVolumeChange={(volume, muted) =>
-            console.log('Volume changed:', { volume, muted })
-          }
-          onPlaybackRateChange={(rate) => console.log('Playback rate:', rate)}
-          onQualityChange={(quality) => console.log('Quality changed:', quality)}
           onThemeChange={(theme) => {
-            console.log('Theme changed:', theme);
             setCurrentTheme(theme);
           }}
-          onPlaylistItemChange={(item, index) =>
-            console.log('Playlist item changed:', { item, index })
-          }
-          onFullscreenChange={(isFullscreen) =>
-            console.log('Fullscreen:', isFullscreen)
-          }
         />
       </div>
     </div>

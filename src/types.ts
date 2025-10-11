@@ -130,7 +130,7 @@ export interface ReactBlackPlayerConfig {
   // Playlist
   /** Array of playlist items */
   playlist?: PlaylistItem[];
-  /** Automatically play next video when current video ends */
+  /** Automatically play next video when current video ends (default: false) */
   autoPlayNext?: boolean;
   
   // Behavior
@@ -140,6 +140,8 @@ export interface ReactBlackPlayerConfig {
   muted?: boolean;
   /** Loop the video when it ends */
   loop?: boolean;
+  /** Loop the current video when it ends (default: false) */
+  loopCurrentVideo?: boolean;
   /** Video preload strategy */
   preload?: 'auto' | 'metadata' | 'none';
   

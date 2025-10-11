@@ -3,14 +3,14 @@ import react from '@vitejs/plugin-react';
 import { resolve } from 'path';
 import dts from 'vite-plugin-dts';
 
-export default defineConfig({
+export default defineConfig(({ command }) => ({
   plugins: [
     react(),
     dts({
       insertTypesEntry: true,
     }),
   ],
-  publicDir: false, // Don't copy public folder in library mode
+  publicDir: command === 'serve' ? 'public' : false, // Enable public folder in dev mode
   build: {
     lib: {
       entry: resolve(__dirname, 'src/index.tsx'),
@@ -30,4 +30,4 @@ export default defineConfig({
       },
     },
   },
-});
+}));

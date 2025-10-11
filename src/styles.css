@@ -198,3 +198,29 @@ input[type="range"]:focus::-moz-range-thumb {
 .youtube-volume-slider::-moz-range-thumb:hover {
   transform: scale(1.3);
 }
+
+/* Subtitle/Caption Styling */
+video::cue {
+  background-color: transparent;
+  color: #ffffff;
+  font-size: 22px;
+  font-family: Arial, Helvetica, sans-serif;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.9), -1px -1px 2px rgba(0, 0, 0, 0.9), 1px -1px 2px rgba(0, 0, 0, 0.9), -1px 1px 2px rgba(0, 0, 0, 0.9);
+  line-height: 1.4;
+  padding: 0;
+}
+
+video::-webkit-media-text-track-container {
+  overflow: visible !important;
+  transform: translateY(-40px);
+  pointer-events: none;
+}
+
+video::-webkit-media-text-track-display {
+  background-color: transparent;
+  border-radius: 0;
+  padding: 0;
+  font-size: 22px;
+  color: #ffffff;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.9), -1px -1px 2px rgba(0, 0, 0, 0.9), 1px -1px 2px rgba(0, 0, 0, 0.9), -1px 1px 2px rgba(0, 0, 0, 0.9);
+}

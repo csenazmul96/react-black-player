@@ -406,6 +406,9 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
     }, 100);
   }, [playlist, onPlaylistItemChange, findBestSubtitleMatch]);
 
+
+
+
   // Handle subtitle change
   const handleSubtitleChange = useCallback((index: number) => {
     const video = videoRef.current;
@@ -433,43 +436,90 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
   // Enable subtitle based on smart matching when subtitles change
   useEffect(() => {
     const video = videoRef.current;
-    if (!video || isChangingQuality.current) return; // Skip if changing quality
+    if (!video) return;
+
+    console.log('🔄 Subtitle effect triggered - activeSubtitle:', activeSubtitle, 'tracks:', currentSubtitles.length);
 
     const enableSubtitle = () => {
-      if (isChangingQuality.current) return; // Skip if changing quality
-      
-      // Only auto-select if no subtitle is currently active (initial load or reset scenarios)
-      if (activeSubtitle === -1) {
-        const bestIndex = findBestSubtitleMatch(currentSubtitles);
-        if (bestIndex >= 0 && bestIndex < video.textTracks.length) {
-          video.textTracks[bestIndex].mode = 'showing';
-          setActiveSubtitle(bestIndex);
-        }
-      } else {
-        // If we have an active subtitle index, make sure it's applied to the video tracks
-        if (activeSubtitle >= 0 && activeSubtitle < video.textTracks.length) {
-          // Disable all tracks first
-          for (let i = 0; i < video.textTracks.length; i++) {
-            video.textTracks[i].mode = 'hidden';
+      // Wait for tracks to be fully loaded
+      const tryEnableSubtitle = (attempts = 0) => {
+        if (!videoRef.current || attempts > 20) {
+          if (attempts > 20) {
+            console.warn('⚠️ Failed to load subtitle tracks after 20 attempts');
           }
-          // Enable the active one
-          video.textTracks[activeSubtitle].mode = 'showing';
+          return;
         }
-      }
+        
+        const video = videoRef.current;
+        
+        // Check if tracks are loaded
+        if (video.textTracks.length === 0) {
+          console.log(`⏳ Waiting for tracks... (attempt ${attempts + 1})`);
+          setTimeout(() => tryEnableSubtitle(attempts + 1), 100);
+          return;
+        }
+        
+        console.log(`📊 Found ${video.textTracks.length} text tracks`);
+        
+        // Only auto-select if no subtitle is currently active (initial load or reset scenarios)
+        if (activeSubtitle === -1) {
+          const bestIndex = findBestSubtitleMatch(currentSubtitles);
+          if (bestIndex >= 0 && bestIndex < video.textTracks.length) {
+            // Disable all tracks first
+            for (let i = 0; i < video.textTracks.length; i++) {
+              video.textTracks[i].mode = 'hidden';
+            }
+            video.textTracks[bestIndex].mode = 'showing';
+            setActiveSubtitle(bestIndex); // Update state so it persists
+            console.log('✅ Auto-enabled subtitle:', currentSubtitles[bestIndex]?.label, '(index:', bestIndex, ')');
+          } else {
+            console.log('ℹ️ No subtitle to auto-enable');
+          }
+        } else {
+          // If we have an active subtitle index, make sure it's applied to the video tracks
+          if (activeSubtitle >= 0 && activeSubtitle < video.textTracks.length) {
+            // Disable all tracks first
+            for (let i = 0; i < video.textTracks.length; i++) {
+              video.textTracks[i].mode = 'hidden';
+            }
+            // Enable the active one - do it twice with a small delay to force re-render
+            video.textTracks[activeSubtitle].mode = 'showing';
+            
+            // Force a re-render by toggling the mode
+            setTimeout(() => {
+              if (videoRef.current && videoRef.current.textTracks[activeSubtitle]) {
+                videoRef.current.textTracks[activeSubtitle].mode = 'hidden';
+                setTimeout(() => {
+                  if (videoRef.current && videoRef.current.textTracks[activeSubtitle]) {
+                    videoRef.current.textTracks[activeSubtitle].mode = 'showing';
+                    console.log('✅ Restored subtitle:', videoRef.current.textTracks[activeSubtitle].label);
+                  }
+                }, 50);
+              }
+            }, 50);
+          } else {
+            console.warn('⚠️ activeSubtitle index out of bounds:', activeSubtitle, 'tracks:', video.textTracks.length);
+          }
+        }
+      };
+      
+      tryEnableSubtitle();
     };
 
     if (video.readyState >= 1) {
       // Metadata already loaded
+      console.log('📹 Video metadata already loaded, enabling subtitle immediately');
       enableSubtitle();
     } else {
       // Wait for metadata to load
+      console.log('⏸️ Waiting for video metadata to load...');
       video.addEventListener('loadedmetadata', enableSubtitle, { once: true });
     }
 
     return () => {
       video.removeEventListener('loadedmetadata', enableSubtitle);
     };
-  }, [currentSubtitles, activeSubtitle, findBestSubtitleMatch]);
+  }, [currentSubtitles, activeSubtitle, findBestSubtitleMatch, currentSources]);
 
   // Video event listeners
   useEffect(() => {
@@ -598,17 +648,12 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
     if (quality === 'auto') {
       // Reset to all sources for auto mode
       setCurrentSources(sources);
-      isChangingQuality.current = false;
     } else {
       // Find and set the selected quality source
       const qualitySource = sources.find(s => s.quality === quality);
       if (qualitySource && videoRef.current) {
         const currentTime = videoRef.current.currentTime;
         const wasPlaying = !videoRef.current.paused;
-        const currentActiveSubtitle = activeSubtitle; // Save current subtitle state
-        
-        // Mark that we're changing quality to prevent default subtitle effect
-        isChangingQuality.current = true;
         
         // Update source but keep original sources list for quality selector
         setCurrentSources([qualitySource]);
@@ -621,55 +666,6 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
               videoRef.current.play();
             }
             
-            // Re-enable subtitles after tracks are loaded
-            const restoreSubtitles = () => {
-              if (!videoRef.current) {
-                isChangingQuality.current = false;
-                return;
-              }
-              
-              // Check if tracks are ready and we had an active subtitle
-              if (currentActiveSubtitle >= 0 && videoRef.current.textTracks.length > 0) {
-                // Wait for text tracks to be properly loaded
-                let attempts = 0;
-                const maxAttempts = 20; // Wait up to 2 seconds
-                
-                const tryRestoreSubtitles = () => {
-                  if (!videoRef.current || attempts >= maxAttempts) {
-                    isChangingQuality.current = false;
-                    return;
-                  }
-                  
-                  if (videoRef.current.textTracks.length > 0 && currentActiveSubtitle < videoRef.current.textTracks.length) {
-                    try {
-                      // Disable all tracks first
-                      for (let i = 0; i < videoRef.current.textTracks.length; i++) {
-                        videoRef.current.textTracks[i].mode = 'hidden';
-                      }
-                      // Re-enable the previously active subtitle
-                      videoRef.current.textTracks[currentActiveSubtitle].mode = 'showing';
-                      isChangingQuality.current = false;
-                    } catch (error) {
-                      console.warn('Failed to restore subtitle track:', error);
-                      attempts++;
-                      setTimeout(tryRestoreSubtitles, 100);
-                    }
-                  } else {
-                    attempts++;
-                    setTimeout(tryRestoreSubtitles, 100);
-                  }
-                };
-                
-                tryRestoreSubtitles();
-              } else {
-                // No subtitle was active, just reset the flag
-                isChangingQuality.current = false;
-              }
-            };
-            
-            // Start subtitle restoration after metadata is loaded
-            setTimeout(restoreSubtitles, 50);
-            
             videoRef.current.removeEventListener('loadedmetadata', restoreState);
           }
         };
@@ -677,7 +673,7 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
         videoRef.current.addEventListener('loadedmetadata', restoreState);
       }
     }
-  }, [activeSubtitle, sources, onQualityChange]);
+  }, [sources, onQualityChange]);
 
   // Close playlist when clicking outside
   const handleContainerClick = useCallback((e: React.MouseEvent) => {
@@ -730,7 +726,7 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
       >
         {currentSubtitles.map((subtitle, index) => (
           <track
-            key={index}
+            key={`${currentSources[0]?.src}-${index}`}
             kind="subtitles"
             src={subtitle.src}
             srcLang={subtitle.srclang}

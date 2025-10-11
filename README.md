@@ -2,7 +2,7 @@
 
 A modern, feature-rich, and highly customizable video player component for React applications. Built with TypeScript, TailwindCSS, and HLS.js support.
 
-![React Black Player Demo](https://img.shields.io/badge/version-1.0.1-blue.svg)
+![React Black Player Demo](https://img.shields.io/badge/version-1.0.2-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 
 ## ✨ Features
@@ -11,12 +11,14 @@ A modern, feature-rich, and highly customizable video player component for React
 - 📱 **Responsive Design** - Adapts to any screen size and aspect ratio
 - 🎬 **Playlist Support** - Built-in playlist with thumbnail previews
 - 📺 **HLS Streaming** - Native support for HLS (.m3u8) streaming
-- 🎯 **Multiple Quality Options** - Automatic and manual quality selection
-- 📝 **Subtitle Support** - Multiple subtitle tracks with easy switching
+- 🎯 **Multiple Quality Options** - Automatic and manual quality selection with seamless switching
+- 📝 **Subtitle Support** - Multiple subtitle tracks with persistence across quality/video changes
 - ⚡ **Variable Playback Speed** - 0.25x to 2x speed control
-- 🖼️ **Portrait & Landscape Videos** - Automatically handles 9:16 and 16:9 aspect ratios
-- 🎛️ **Comprehensive Controls** - Play, pause, volume, fullscreen, and more
+- 🖼️ **Smart Aspect Ratio** - Automatically handles portrait (9:16) and landscape (16:9) videos
+- 🏛️ **Comprehensive Controls** - Play, pause, volume, seek, fullscreen, and more
 - 🔄 **Auto-play Next** - Automatic playlist progression
+- 🎮 **Smooth Seeking** - Drag-to-seek with instant visual feedback
+- ⏳ **Buffering Indicator** - Beautiful loading spinner during buffering
 - 🎨 **Hover Effects** - Smooth animations and transitions
 - ⌨️ **Keyboard Shortcuts** - (Coming soon)
 - 📦 **TypeScript Support** - Full type definitions included
@@ -246,7 +248,9 @@ const myTheme = {
 
 ### Portrait Video (9:16)
 
-The player automatically handles portrait videos by centering them with black bars on the sides:
+The player automatically detects and handles portrait videos intelligently:
+- **Portrait videos** (9:16): Limited height (70vh max), centered with black pillarbox bars
+- **Landscape videos** (16:9): Full width adjustment with responsive height
 
 ```tsx
 <ReactBlackPlayer
@@ -260,6 +264,8 @@ The player automatically handles portrait videos by centering them with black ba
   aspectRatio="16/9"
 />
 ```
+
+No additional configuration needed - the player automatically adapts!
 
 ## 📚 API Reference
 

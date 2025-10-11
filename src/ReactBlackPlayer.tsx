@@ -14,7 +14,7 @@ import {
   Palette,
 } from 'lucide-react';
 import Hls from 'hls.js';
-import type { ReactBlackPlayerProps, Theme } from './types';
+import type { ReactBlackPlayerProps, Theme, SubtitleTrack } from './types';
 import { defaultThemes, getThemeByName, applyThemeToElement } from './themes';
 import './styles.css';
 
@@ -38,7 +38,7 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
   preload = 'metadata',
   width = '100%',
   height = 'auto',
-  aspectRatio = '16/9',
+  aspectRatio = '9/16',
   themeConfig,
   onPlay,
   onPause,
@@ -60,7 +60,6 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const hlsRef = useRef<Hls | null>(null);
   const hideControlsTimeout = useRef<NodeJS.Timeout | null>(null);
-  const isChangingQuality = useRef<boolean>(false);
   const progressBarRef = useRef<HTMLDivElement>(null);
   const isDraggingProgress = useRef<boolean>(false);
   const isSeeking = useRef<boolean>(false);
@@ -84,8 +83,8 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
   const [activeSubtitle, setActiveSubtitle] = useState<number>(-1);
   const [preferredSubtitleLanguage, setPreferredSubtitleLanguage] = useState<string | null>(null);
   const [showCenterPlay, setShowCenterPlay] = useState(!autoPlay);
-  const [videoObjectFit, setVideoObjectFit] = useState<'contain' | 'cover'>('contain');
   const [isBuffering, setIsBuffering] = useState(false);
+  const [videoAspectRatio, setVideoAspectRatio] = useState<number | null>(null);
   
   // Settings dropdown states
   const [speedDropdownOpen, setSpeedDropdownOpen] = useState(true);
@@ -115,7 +114,6 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
     setShowCenterPlay(!autoPlay);
     setCurrentTime(0);
     setDuration(0);
-    setVideoObjectFit('contain'); // Always use contain to show full video
 
     // Check if source is m3u8
     const isHLS = mainSource.src.includes('.m3u8') || mainSource.type === 'application/x-mpegURL';
@@ -438,14 +436,13 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
     const video = videoRef.current;
     if (!video) return;
 
-    console.log('🔄 Subtitle effect triggered - activeSubtitle:', activeSubtitle, 'tracks:', currentSubtitles.length);
 
     const enableSubtitle = () => {
       // Wait for tracks to be fully loaded
       const tryEnableSubtitle = (attempts = 0) => {
         if (!videoRef.current || attempts > 20) {
           if (attempts > 20) {
-            console.warn('⚠️ Failed to load subtitle tracks after 20 attempts');
+            console.warn('Failed to load subtitle tracks after 20 attempts');
           }
           return;
         }
@@ -454,12 +451,10 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
         
         // Check if tracks are loaded
         if (video.textTracks.length === 0) {
-          console.log(`⏳ Waiting for tracks... (attempt ${attempts + 1})`);
           setTimeout(() => tryEnableSubtitle(attempts + 1), 100);
           return;
         }
         
-        console.log(`📊 Found ${video.textTracks.length} text tracks`);
         
         // Only auto-select if no subtitle is currently active (initial load or reset scenarios)
         if (activeSubtitle === -1) {
@@ -471,9 +466,7 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
             }
             video.textTracks[bestIndex].mode = 'showing';
             setActiveSubtitle(bestIndex); // Update state so it persists
-            console.log('✅ Auto-enabled subtitle:', currentSubtitles[bestIndex]?.label, '(index:', bestIndex, ')');
           } else {
-            console.log('ℹ️ No subtitle to auto-enable');
           }
         } else {
           // If we have an active subtitle index, make sure it's applied to the video tracks
@@ -492,13 +485,11 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
                 setTimeout(() => {
                   if (videoRef.current && videoRef.current.textTracks[activeSubtitle]) {
                     videoRef.current.textTracks[activeSubtitle].mode = 'showing';
-                    console.log('✅ Restored subtitle:', videoRef.current.textTracks[activeSubtitle].label);
                   }
                 }, 50);
               }
             }, 50);
           } else {
-            console.warn('⚠️ activeSubtitle index out of bounds:', activeSubtitle, 'tracks:', video.textTracks.length);
           }
         }
       };
@@ -508,11 +499,9 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
 
     if (video.readyState >= 1) {
       // Metadata already loaded
-      console.log('📹 Video metadata already loaded, enabling subtitle immediately');
       enableSubtitle();
     } else {
       // Wait for metadata to load
-      console.log('⏸️ Waiting for video metadata to load...');
       video.addEventListener('loadedmetadata', enableSubtitle, { once: true });
     }
 
@@ -537,8 +526,11 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
     const handleLoadedMetadata = () => {
       setDuration(video.duration);
       
-      // Always use contain to show full video with black bars if needed
-      setVideoObjectFit('contain');
+      // Calculate video aspect ratio
+      if (video.videoWidth && video.videoHeight) {
+        const aspectRatio = video.videoWidth / video.videoHeight;
+        setVideoAspectRatio(aspectRatio);
+      }
       
       onLoadedMetadata?.();
     };
@@ -689,18 +681,43 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
     }
   }, [showPlaylistSidebar]);
 
+  // Calculate container style based on video aspect ratio
+  const getContainerStyle = () => {
+    const baseStyle: React.CSSProperties = {
+      width: typeof width === 'number' ? `${width}px` : width,
+      backgroundColor: currentTheme.backgroundColor || currentTheme.primaryColor,
+      border: `1px solid ${currentTheme.primaryColor}`,
+      color: currentTheme.textColor,
+    };
+
+    // If video aspect ratio is available
+    if (videoAspectRatio !== null) {
+      // Portrait/Vertical video (aspect ratio < 1, e.g., 9:16 = 0.5625)
+      if (videoAspectRatio < 1) {
+        // Limit height to maintain reasonable proportions
+        // Use 70vh as max height for portrait videos to prevent them from being too tall
+        baseStyle.height = 'auto';
+        baseStyle.maxHeight = '70vh';
+        baseStyle.aspectRatio = videoAspectRatio.toString();
+      } else {
+        // Landscape video (aspect ratio >= 1, e.g., 16:9 = 1.777)
+        baseStyle.height = typeof height === 'number' ? `${height}px` : height;
+        baseStyle.aspectRatio = height === 'auto' ? aspectRatio : undefined;
+      }
+    } else {
+      // Fallback to original behavior if aspect ratio not yet calculated
+      baseStyle.height = typeof height === 'number' ? `${height}px` : height;
+      baseStyle.aspectRatio = height === 'auto' ? aspectRatio : undefined;
+    }
+
+    return baseStyle;
+  };
+
   return (
     <div
       ref={containerRef}
       className={`react-black-player relative overflow-hidden ${className}`}
-      style={{
-        width: typeof width === 'number' ? `${width}px` : width,
-        height: typeof height === 'number' ? `${height}px` : height,
-        aspectRatio: height === 'auto' ? aspectRatio : undefined,
-        backgroundColor: currentTheme.backgroundColor || currentTheme.primaryColor,
-        border: `1px solid ${currentTheme.primaryColor}`,
-        color: currentTheme.textColor,
-      }}
+      style={getContainerStyle()}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       onClick={handleContainerClick}
@@ -710,7 +727,7 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
         ref={videoRef}
         className="w-full h-full"
         style={{
-          objectFit: videoObjectFit,
+          objectFit: 'contain', // Always contain to show full video with black bars
           backgroundColor: '#000000'
         }}
         poster={poster}

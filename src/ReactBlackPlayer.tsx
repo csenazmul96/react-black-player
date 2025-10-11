@@ -73,12 +73,12 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
   
   // Use refs for props that need to be accessed in event handlers
   // Initialize them properly and keep them updated
-  const autoPlayNextRef = useRef<boolean>(autoPlayNext);
-  const loopCurrentVideoRef = useRef<boolean>(loopCurrentVideo);
+  const autoPlayNextRef = useRef<boolean>(autoPlayNext ?? false);
+  const loopCurrentVideoRef = useRef<boolean>(loopCurrentVideo ?? false);
   
   // Update refs immediately whenever props change (before any render)
-  autoPlayNextRef.current = autoPlayNext;
-  loopCurrentVideoRef.current = loopCurrentVideo;
+  autoPlayNextRef.current = autoPlayNext ?? false;
+  loopCurrentVideoRef.current = loopCurrentVideo ?? false;
 
   // Player state
   const [isPlaying, setIsPlaying] = useState(false);

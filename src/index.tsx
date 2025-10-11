@@ -1,12 +1,12 @@
-export { VideoPlayer } from './VideoPlayer';
+export { ReactBlackPlayer } from './ReactBlackPlayer';
 export { defaultThemes, createCustomTheme } from './themes';
 export type {
   VideoSource,
   PlaylistItem,
   SubtitleTrack,
-  VideoPlayerConfig,
-  VideoPlayerEvents,
-  VideoPlayerProps,
+  ReactBlackPlayerConfig,
+  ReactBlackPlayerEvents,
+  ReactBlackPlayerProps,
   Theme,
   ThemeConfig,
 } from './types';

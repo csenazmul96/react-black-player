@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import ReactDOM from 'react-dom/client';
-import { VideoPlayer } from '../src/VideoPlayer';
+import { ReactBlackPlayer } from '../src/ReactBlackPlayer';
 import type { PlaylistItem, VideoSource, SubtitleTrack, Theme } from '../src/types';
 import { defaultThemes } from '../src/themes';
 import '../src/styles.css';
@@ -10,14 +10,24 @@ const App: React.FC = () => {
   // Sample video sources with multiple qualities
   const videoSources: VideoSource[] = [
     {
+      src: 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8',
+      type: 'application/x-mpegURL',
+      quality: '1080p',
+    },
+    {
       src: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
       type: 'video/mp4',
       quality: '720p',
     },
     {
-      src: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+      src: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
       type: 'video/mp4',
       quality: '480p',
+    },
+    {
+      src: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4',
+      type: 'video/mp4',
+      quality: '360p',
     },
   ];
 
@@ -47,6 +57,12 @@ const App: React.FC = () => {
         {
           src: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
           type: 'video/mp4',
+          quality: '720p',
+        },
+        {
+          src: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+          type: 'video/mp4',
+          quality: '480p',
         },
       ],
       subtitles: sampleSubtitles,
@@ -59,6 +75,12 @@ const App: React.FC = () => {
         {
           src: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
           type: 'video/mp4',
+          quality: '1080p',
+        },
+        {
+          src: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+          type: 'video/mp4',
+          quality: '720p',
         },
       ],
       subtitles: sampleSubtitles,
@@ -125,9 +147,9 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-900 py-8 px-4">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-white text-3xl font-bold mb-6 text-center">Custom Video Player</h1>
-        <p className="text-gray-400 text-center mb-4">Try the vertical videos (items 6 & 7) to see portrait mode handling</p>
-        <VideoPlayer
+        <h1 className="text-white text-3xl font-bold mb-6 text-center">React Black Player</h1>
+        <p className="text-gray-400 text-center mb-4">Try the vertical video (item 6) to see portrait mode handling</p>
+        <ReactBlackPlayer
           sources={videoSources}
           poster="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/images/BigBuckBunny.jpg"
           subtitles={sampleSubtitles}

@@ -78,10 +78,10 @@ export interface SubtitleTrack {
 }
 
 /**
- * Configuration options for the video player
- * @interface VideoPlayerConfig
+ * Configuration options for the React Black Player
+ * @interface ReactBlackPlayerConfig
  */
-export interface VideoPlayerConfig {
+export interface ReactBlackPlayerConfig {
   // Display options
   /** Show/hide current time and duration display */
   showTime?: boolean;
@@ -128,10 +128,10 @@ export interface VideoPlayerConfig {
 }
 
 /**
- * Event handlers for video player interactions
- * @interface VideoPlayerEvents
+ * Event handlers for React Black Player interactions
+ * @interface ReactBlackPlayerEvents
  */
-export interface VideoPlayerEvents {
+export interface ReactBlackPlayerEvents {
   /** Callback when video starts playing */
   onPlay?: () => void;
   /** Callback when video is paused */
@@ -165,11 +165,11 @@ export interface VideoPlayerEvents {
 }
 
 /**
- * Complete props for the VideoPlayer component
+ * Complete props for the ReactBlackPlayer component
  * Combines configuration, events, and required props
- * @type VideoPlayerProps
+ * @type ReactBlackPlayerProps
  */
-export type VideoPlayerProps = VideoPlayerConfig & VideoPlayerEvents & {
+export type ReactBlackPlayerProps = ReactBlackPlayerConfig & ReactBlackPlayerEvents & {
   /** Array of video sources (required) */
   sources: VideoSource[];
   /** URL of the poster image to show before playback */

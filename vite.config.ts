@@ -14,17 +14,19 @@ export default defineConfig({
   build: {
     lib: {
       entry: resolve(__dirname, 'src/index.tsx'),
-      name: 'ReactJWPlayerPro',
+      name: 'ReactBlackPlayer',
       formats: ['es', 'umd'],
       fileName: (format) => `index.${format === 'es' ? 'esm.' : ''}js`,
     },
     rollupOptions: {
-      external: ['react', 'react-dom'],
+      external: ['react', 'react-dom', 'react/jsx-runtime'],
       output: {
         globals: {
           react: 'React',
           'react-dom': 'ReactDOM',
+          'react/jsx-runtime': 'React',
         },
+        exports: 'named',
       },
     },
   },

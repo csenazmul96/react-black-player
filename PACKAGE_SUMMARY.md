@@ -69,7 +69,7 @@
 4. `dist/index.d.ts` - Main type definitions
 5. `dist/types.d.ts` - Interface definitions (5.7 KB)
 6. `dist/themes.d.ts` - Theme type definitions
-7. `dist/VideoPlayer.d.ts` - Component types
+7. `dist/ReactBlackPlayer.d.ts` - Component types
 8. `README.md` - Complete documentation (10.6 KB)
 9. `LICENSE` - MIT License (1.1 KB)
 10. `package.json` - Package metadata (1.8 KB)
@@ -102,9 +102,9 @@
 - `PlaylistItem`
 - `Theme`
 - `ThemeConfig`
-- `VideoPlayerConfig`
-- `VideoPlayerEvents`
-- `VideoPlayerProps`
+- `ReactBlackPlayerConfig`
+- `ReactBlackPlayerEvents`
+- `ReactBlackPlayerProps`
 
 ## 🚀 How to Test
 
@@ -115,10 +115,10 @@ npm install /Users/lynkto/Projects/cccc/react-black-player-1.0.0.tgz
 
 ### Usage
 ```tsx
-import { VideoPlayer } from 'react-black-player';
+import { ReactBlackPlayer } from 'react-black-player';
 import 'react-black-player/dist/style.css';
 
-<VideoPlayer
+<ReactBlackPlayer
   sources={[{ src: 'video.mp4', type: 'video/mp4' }]}
   width="100%"
   aspectRatio="16/9"
@@ -176,7 +176,7 @@ const myTheme = {
 
 ### With Playlist
 ```tsx
-<VideoPlayer
+<ReactBlackPlayer
   sources={[...]}
   playlist={[
     { id: '1', title: 'Video 1', sources: [...] },
@@ -188,7 +188,7 @@ const myTheme = {
 
 ### With Subtitles
 ```tsx
-<VideoPlayer
+<ReactBlackPlayer
   sources={[...]}
   subtitles={[
     { src: 'en.vtt', label: 'English', srclang: 'en' },

@@ -14,13 +14,13 @@ npm install /Users/lynkto/Projects/cccc/react-black-player-1.0.0.tgz
 
 ```tsx
 import React from 'react';
-import { VideoPlayer } from 'react-black-player';
+import { ReactBlackPlayer } from 'react-black-player';
 import 'react-black-player/dist/style.css';
 
 function App() {
   return (
     <div className="App">
-      <VideoPlayer
+      <ReactBlackPlayer
         sources={[
           {
             src: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
@@ -108,7 +108,7 @@ The built package includes:
 - `dist/index.d.ts` - TypeScript definitions
 - `dist/types.d.ts` - Type definitions
 - `dist/themes.d.ts` - Theme type definitions
-- `dist/VideoPlayer.d.ts` - Component types
+- `dist/ReactBlackPlayer.d.ts` - Component types
 - `README.md` - Documentation
 - `LICENSE` - MIT License
 - `package.json` - Package metadata

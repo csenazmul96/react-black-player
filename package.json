@@ -51,8 +51,8 @@
   },
   "homepage": "https://github.com/yourusername/react-black-player#readme",
   "peerDependencies": {
-    "react": "^18.0.0",
-    "react-dom": "^18.0.0"
+    "react": ">=16.8.0",
+    "react-dom": ">=16.8.0"
   },
   "dependencies": {
     "hls.js": "^1.5.7",

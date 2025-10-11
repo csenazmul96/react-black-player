@@ -43,12 +43,12 @@ pnpm add react-black-player
 
 ```tsx
 import React from 'react';
-import { VideoPlayer } from 'react-black-player';
+import { ReactBlackPlayer } from 'react-black-player';
 import 'react-black-player/dist/style.css';
 
 function App() {
   return (
-    <VideoPlayer
+    <ReactBlackPlayer
       sources={[
         {
           src: 'https://example.com/video.mp4',
@@ -71,9 +71,9 @@ export default App;
 ### Basic Video Player
 
 ```tsx
-import { VideoPlayer } from 'react-black-player';
+import { ReactBlackPlayer } from 'react-black-player';
 
-<VideoPlayer
+<ReactBlackPlayer
   sources={[
     {
       src: '/videos/sample.mp4',
@@ -89,7 +89,7 @@ import { VideoPlayer } from 'react-black-player';
 ### Multiple Quality Options
 
 ```tsx
-<VideoPlayer
+<ReactBlackPlayer
   sources={[
     {
       src: 'https://example.com/video-4k.mp4',
@@ -114,7 +114,7 @@ import { VideoPlayer } from 'react-black-player';
 ### With Subtitles
 
 ```tsx
-<VideoPlayer
+<ReactBlackPlayer
   sources={[
     {
       src: '/videos/movie.mp4',
@@ -141,7 +141,7 @@ import { VideoPlayer } from 'react-black-player';
 ### With Playlist
 
 ```tsx
-<VideoPlayer
+<ReactBlackPlayer
   sources={[
     {
       src: '/videos/video1.mp4',
@@ -180,7 +180,7 @@ import { VideoPlayer } from 'react-black-player';
 ### HLS Streaming
 
 ```tsx
-<VideoPlayer
+<ReactBlackPlayer
   sources={[
     {
       src: 'https://example.com/stream/master.m3u8',
@@ -193,7 +193,7 @@ import { VideoPlayer } from 'react-black-player';
 ### Custom Theme
 
 ```tsx
-import { VideoPlayer, createCustomTheme } from 'react-black-player';
+import { ReactBlackPlayer, createCustomTheme } from 'react-black-player';
 
 const myTheme = {
   name: 'My Theme',
@@ -204,7 +204,7 @@ const myTheme = {
   accentColor: '#e94560',
 };
 
-<VideoPlayer
+<ReactBlackPlayer
   sources={[
     {
       src: '/videos/video.mp4',
@@ -222,7 +222,7 @@ const myTheme = {
 ### With Event Handlers
 
 ```tsx
-<VideoPlayer
+<ReactBlackPlayer
   sources={[
     {
       src: '/videos/video.mp4',
@@ -249,7 +249,7 @@ const myTheme = {
 The player automatically handles portrait videos by centering them with black bars on the sides:
 
 ```tsx
-<VideoPlayer
+<ReactBlackPlayer
   sources={[
     {
       src: '/videos/vertical-video.mp4',
@@ -263,7 +263,7 @@ The player automatically handles portrait videos by centering them with black ba
 
 ## 📚 API Reference
 
-### VideoPlayer Props
+### ReactBlackPlayer Props
 
 | Prop | Type | Default | Description |
 |------|------|---------|-------------|

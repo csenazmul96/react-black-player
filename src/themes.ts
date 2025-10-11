@@ -3,6 +3,22 @@ import type { Theme } from './types';
 // Default predefined themes
 export const defaultThemes: Theme[] = [
   {
+    name: 'Black',
+    primaryColor: '#000000',
+    secondaryColor: '#ffffff',
+    backgroundColor: '#000000',
+    textColor: '#ffffff',
+    accentColor: '#ffffff',
+  },
+  {
+    name: 'White',
+    primaryColor: '#ffffff',
+    secondaryColor: '#000000',
+    backgroundColor: '#ffffff',
+    textColor: '#000000',
+    accentColor: '#000000',
+  },
+  {
     name: 'Dark',
     primaryColor: '#000000',
     secondaryColor: '#dc143c',

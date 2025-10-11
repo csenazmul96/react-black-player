@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vertical Video Test - 9:16 Ratio</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #1a1a1a;
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: white;
+            text-align: center;
+        }
+        .player-wrapper {
+            background: #000;
+            border: 2px solid #333;
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+        video {
+            width: 100%;
+            height: 600px;
+            object-fit: contain;
+            background: #000;
+        }
+        .info {
+            color: #888;
+            padding: 10px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Vertical Video Test (9:16)</h1>
+        
+        <div class="player-wrapper">
+            <video controls>
+                <source src="https://cdn.coverr.co/videos/coverr-a-girl-in-pink-sweater-6721/1080p.mp4" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+        </div>
+        <div class="info">
+            This is a vertical 9:16 video. Notice the black bars on left and right sides.
+        </div>
+
+        <div class="player-wrapper">
+            <video controls>
+                <source src="https://assets.mixkit.co/videos/preview/mixkit-man-under-multicolored-lights-1237-large.mp4" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+        </div>
+        <div class="info">
+            Another vertical video example
+        </div>
+    </div>
+</body>
+</html>

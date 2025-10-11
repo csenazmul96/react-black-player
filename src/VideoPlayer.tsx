@@ -78,6 +78,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const [currentSubtitles, setCurrentSubtitles] = useState(subtitles);
   const [activeSubtitle, setActiveSubtitle] = useState<number>(-1);
   const [showCenterPlay, setShowCenterPlay] = useState(!autoPlay);
+  const [videoObjectFit, setVideoObjectFit] = useState<'contain' | 'cover'>('contain');
 
   // Theme state
   const availableThemes = [...(themeConfig?.availableThemes || defaultThemes), ...(themeConfig?.customThemes || [])];
@@ -101,6 +102,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     setShowCenterPlay(!autoPlay);
     setCurrentTime(0);
     setDuration(0);
+    setVideoObjectFit('contain'); // Always use contain to show full video
 
     // Check if source is m3u8
     const isHLS = mainSource.src.includes('.m3u8') || mainSource.type === 'application/x-mpegURL';
@@ -337,6 +339,10 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
 
     const handleLoadedMetadata = () => {
       setDuration(video.duration);
+      
+      // Always use contain to show full video with black bars if needed
+      setVideoObjectFit('contain');
+      
       onLoadedMetadata?.();
     };
 
@@ -476,7 +482,11 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
       {/* Video Element */}
       <video
         ref={videoRef}
-        className="w-full h-full object-contain"
+        className="w-full h-full"
+        style={{
+          objectFit: videoObjectFit,
+          backgroundColor: '#000000'
+        }}
         poster={poster}
         autoPlay={autoPlay}
         muted={muted}

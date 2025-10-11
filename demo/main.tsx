@@ -99,6 +99,18 @@ const App: React.FC = () => {
       ],
       subtitles: sampleSubtitles,
     },
+    {
+      id: '6',
+      title: 'Vertical Portrait Video (9:16)',
+      thumbnail: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/images/Sintel.jpg',
+      sources: [
+        {
+          src: '/4678261-hd_1080_1920_25fps.mp4',
+          type: 'video/mp4',
+        },
+      ],
+      subtitles: [],
+    },
   ];
 
   const customTheme: Theme = {
@@ -113,6 +125,8 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-900 py-8 px-4">
       <div className="max-w-4xl mx-auto">
+        <h1 className="text-white text-3xl font-bold mb-6 text-center">Custom Video Player</h1>
+        <p className="text-gray-400 text-center mb-4">Try the vertical videos (items 6 & 7) to see portrait mode handling</p>
         <VideoPlayer
           sources={videoSources}
           poster="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/images/BigBuckBunny.jpg"

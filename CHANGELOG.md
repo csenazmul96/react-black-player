@@ -18,6 +18,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Theme dropdown properly closes with smooth transition
 - Playlist toggle button now always visible (not hidden when controls auto-hide)
 - Removed height constraint on input[type="range"] that was causing layout issues
+- Quality selector now keeps all quality options visible after selecting a quality
+- Subtitles now persist when changing video quality (uses loadedmetadata event to restore subtitle state)
+- Default subtitles now properly enabled on video load
 
 ### Improved
 - Demo now includes multiple actual quality sources (1080p HLS, 720p, 480p, 360p)

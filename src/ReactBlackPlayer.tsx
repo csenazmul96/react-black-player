@@ -60,11 +60,16 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const hlsRef = useRef<Hls | null>(null);
   const hideControlsTimeout = useRef<NodeJS.Timeout | null>(null);
+  const isChangingQuality = useRef<boolean>(false);
+  const progressBarRef = useRef<HTMLDivElement>(null);
+  const isDraggingProgress = useRef<boolean>(false);
+  const isSeeking = useRef<boolean>(false);
 
   // Player state
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [seekPreviewTime, setSeekPreviewTime] = useState<number | null>(null);
   const [volume, setVolume] = useState(muted ? 0 : 1);
   const [isMuted, setIsMuted] = useState(muted);
   const [showControls, setShowControls] = useState(true);
@@ -77,6 +82,7 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
   const [currentSources, setCurrentSources] = useState(sources);
   const [currentSubtitles, setCurrentSubtitles] = useState(subtitles);
   const [activeSubtitle, setActiveSubtitle] = useState<number>(-1);
+  const [preferredSubtitleLanguage, setPreferredSubtitleLanguage] = useState<string | null>(null);
   const [showCenterPlay, setShowCenterPlay] = useState(!autoPlay);
   const [videoObjectFit, setVideoObjectFit] = useState<'contain' | 'cover'>('contain');
   
@@ -229,16 +235,71 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
     onVolumeChange?.(volume, newMuted);
   }, [isMuted, volume, onVolumeChange]);
 
-  // Progress bar
-  const handleProgressClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+  // Progress bar handling with drag support and instant visual feedback
+  const updateProgress = useCallback((clientX: number, isPreview: boolean = false) => {
     const video = videoRef.current;
-    if (!video) return;
+    const progressBar = progressBarRef.current;
+    if (!video || !progressBar || !duration) return;
 
-    const rect = e.currentTarget.getBoundingClientRect();
-    const pos = (e.clientX - rect.left) / rect.width;
-    video.currentTime = pos * duration;
+    const rect = progressBar.getBoundingClientRect();
+    const pos = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+    const newTime = pos * duration;
+
+    if (isPreview) {
+      // Just update the preview time for instant visual feedback
+      setSeekPreviewTime(newTime);
+    } else {
+      // Actually seek the video and update currentTime immediately
+      isSeeking.current = true;
+      setCurrentTime(newTime); // Update UI immediately
+      video.currentTime = newTime;
+      setSeekPreviewTime(null);
+      
+      // Clear seeking flag after a short delay to allow video to catch up
+      setTimeout(() => {
+        isSeeking.current = false;
+      }, 100);
+    }
+  }, [duration]);
+
+  const handleProgressClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    updateProgress(e.clientX, false);
     onSeeked?.();
-  }, [duration, onSeeked]);
+  }, [updateProgress, onSeeked]);
+
+  const handleProgressMouseDown = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    isDraggingProgress.current = true;
+    updateProgress(e.clientX, true);
+    e.preventDefault();
+  }, [updateProgress]);
+
+  const handleProgressMouseMove = useCallback((e: MouseEvent) => {
+    if (!isDraggingProgress.current) return;
+    updateProgress(e.clientX, true);
+  }, [updateProgress]);
+
+  const handleProgressMouseUp = useCallback((e: MouseEvent) => {
+    if (isDraggingProgress.current) {
+      isDraggingProgress.current = false;
+      updateProgress(e.clientX, false);
+      setSeekPreviewTime(null);
+      onSeeked?.();
+    }
+  }, [updateProgress, onSeeked]);
+
+  // Add global mouse event listeners for dragging
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => handleProgressMouseMove(e);
+    const handleMouseUp = (e: MouseEvent) => handleProgressMouseUp(e);
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [handleProgressMouseMove, handleProgressMouseUp]);
 
   // Playback rate
   const changePlaybackRate = useCallback((rate: number) => {
@@ -267,16 +328,36 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
     }
   }, [onFullscreenChange]);
 
+  // Helper function to find the best subtitle match
+  const findBestSubtitleMatch = useCallback((subtitles: SubtitleTrack[]) => {
+    if (!subtitles.length) return -1;
+
+    // If we have a preferred language, try to find it
+    if (preferredSubtitleLanguage) {
+      const preferredIndex = subtitles.findIndex(sub => sub.srclang === preferredSubtitleLanguage);
+      if (preferredIndex >= 0) return preferredIndex;
+    }
+
+    // Look for default subtitle
+    const defaultIndex = subtitles.findIndex(sub => sub.default);
+    if (defaultIndex >= 0) return defaultIndex;
+
+    // Return -1 to indicate no subtitle should be selected
+    return -1;
+  }, [preferredSubtitleLanguage]);
 
   // Playlist navigation
   const playNextVideo = useCallback(() => {
     if (!playlist.length) return;
     const nextIndex = (currentPlaylistIndex + 1) % playlist.length;
     const nextItem = playlist[nextIndex];
+    const nextSubtitles = nextItem.subtitles || [];
+    const bestSubtitleIndex = findBestSubtitleMatch(nextSubtitles);
+    
     setCurrentPlaylistIndex(nextIndex);
     setCurrentSources(nextItem.sources);
-    setCurrentSubtitles(nextItem.subtitles || []);
-    setActiveSubtitle(-1);
+    setCurrentSubtitles(nextSubtitles);
+    setActiveSubtitle(bestSubtitleIndex);
     setShowCenterPlay(false);
     onPlaylistItemChange?.(nextItem, nextIndex);
     
@@ -284,31 +365,37 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
     setTimeout(() => {
       videoRef.current?.play();
     }, 100);
-  }, [playlist, currentPlaylistIndex, onPlaylistItemChange]);
+  }, [playlist, currentPlaylistIndex, onPlaylistItemChange, findBestSubtitleMatch]);
 
   const playPreviousVideo = useCallback(() => {
     if (!playlist.length) return;
     const prevIndex = currentPlaylistIndex === 0 ? playlist.length - 1 : currentPlaylistIndex - 1;
     const prevItem = playlist[prevIndex];
+    const prevSubtitles = prevItem.subtitles || [];
+    const bestSubtitleIndex = findBestSubtitleMatch(prevSubtitles);
+    
     setCurrentPlaylistIndex(prevIndex);
     setCurrentSources(prevItem.sources);
-    setCurrentSubtitles(prevItem.subtitles || []);
-    setActiveSubtitle(-1);
+    setCurrentSubtitles(prevSubtitles);
+    setActiveSubtitle(bestSubtitleIndex);
     setShowCenterPlay(false);
     onPlaylistItemChange?.(prevItem, prevIndex);
     
     setTimeout(() => {
       videoRef.current?.play();
     }, 100);
-  }, [playlist, currentPlaylistIndex, onPlaylistItemChange]);
+  }, [playlist, currentPlaylistIndex, onPlaylistItemChange, findBestSubtitleMatch]);
 
   const selectPlaylistItem = useCallback((index: number) => {
     if (!playlist.length || index < 0 || index >= playlist.length) return;
     const item = playlist[index];
+    const itemSubtitles = item.subtitles || [];
+    const bestSubtitleIndex = findBestSubtitleMatch(itemSubtitles);
+    
     setCurrentPlaylistIndex(index);
     setCurrentSources(item.sources);
-    setCurrentSubtitles(item.subtitles || []);
-    setActiveSubtitle(-1);
+    setCurrentSubtitles(itemSubtitles);
+    setActiveSubtitle(bestSubtitleIndex);
     setShowCenterPlay(false);
     setShowPlaylistSidebar(false);
     onPlaylistItemChange?.(item, index);
@@ -316,7 +403,7 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
     setTimeout(() => {
       videoRef.current?.play();
     }, 100);
-  }, [playlist, onPlaylistItemChange]);
+  }, [playlist, onPlaylistItemChange, findBestSubtitleMatch]);
 
   // Handle subtitle change
   const handleSubtitleChange = useCallback((index: number) => {
@@ -331,11 +418,57 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
     // Enable selected track or disable all if -1
     if (index >= 0 && index < video.textTracks.length) {
       video.textTracks[index].mode = 'showing';
+      // Remember the preferred language
+      setPreferredSubtitleLanguage(currentSubtitles[index]?.srclang || null);
+    } else {
+      // User chose to turn off subtitles
+      setPreferredSubtitleLanguage(null);
     }
 
     setActiveSubtitle(index);
     setShowSettingsMenu(false);
-  }, []);
+  }, [currentSubtitles]);
+
+  // Enable subtitle based on smart matching when subtitles change
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || isChangingQuality.current) return; // Skip if changing quality
+
+    const enableSubtitle = () => {
+      if (isChangingQuality.current) return; // Skip if changing quality
+      
+      // Only auto-select if no subtitle is currently active (initial load or reset scenarios)
+      if (activeSubtitle === -1) {
+        const bestIndex = findBestSubtitleMatch(currentSubtitles);
+        if (bestIndex >= 0 && bestIndex < video.textTracks.length) {
+          video.textTracks[bestIndex].mode = 'showing';
+          setActiveSubtitle(bestIndex);
+        }
+      } else {
+        // If we have an active subtitle index, make sure it's applied to the video tracks
+        if (activeSubtitle >= 0 && activeSubtitle < video.textTracks.length) {
+          // Disable all tracks first
+          for (let i = 0; i < video.textTracks.length; i++) {
+            video.textTracks[i].mode = 'hidden';
+          }
+          // Enable the active one
+          video.textTracks[activeSubtitle].mode = 'showing';
+        }
+      }
+    };
+
+    if (video.readyState >= 1) {
+      // Metadata already loaded
+      enableSubtitle();
+    } else {
+      // Wait for metadata to load
+      video.addEventListener('loadedmetadata', enableSubtitle, { once: true });
+    }
+
+    return () => {
+      video.removeEventListener('loadedmetadata', enableSubtitle);
+    };
+  }, [currentSubtitles, activeSubtitle, findBestSubtitleMatch]);
 
   // Video event listeners
   useEffect(() => {
@@ -343,7 +476,10 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
     if (!video) return;
 
     const handleTimeUpdate = () => {
-      setCurrentTime(video.currentTime);
+      // Don't update currentTime if we're actively seeking to prevent jumping back
+      if (!isSeeking.current) {
+        setCurrentTime(video.currentTime);
+      }
       onTimeUpdate?.(video.currentTime);
     };
 
@@ -371,6 +507,7 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
     };
 
     const handleSeeking = () => {
+      isSeeking.current = true;
       onSeeking?.();
     };
 
@@ -393,11 +530,17 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
       setShowCenterPlay(false);
     };
 
+    const handleSeeked = () => {
+      isSeeking.current = false;
+      setCurrentTime(video.currentTime);
+    };
+
     video.addEventListener('timeupdate', handleTimeUpdate);
     video.addEventListener('loadedmetadata', handleLoadedMetadata);
     video.addEventListener('ended', handleEnded);
     video.addEventListener('canplay', handleCanPlay);
     video.addEventListener('seeking', handleSeeking);
+    video.addEventListener('seeked', handleSeeked);
     video.addEventListener('play', handlePlay);
     video.addEventListener('pause', handlePause);
     video.addEventListener('waiting', handleWaiting);
@@ -409,6 +552,7 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
       video.removeEventListener('ended', handleEnded);
       video.removeEventListener('canplay', handleCanPlay);
       video.removeEventListener('seeking', handleSeeking);
+      video.removeEventListener('seeked', handleSeeked);
       video.removeEventListener('play', handlePlay);
       video.removeEventListener('pause', handlePause);
       video.removeEventListener('waiting', handleWaiting);
@@ -428,34 +572,98 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
-  // Quality selector
-  const qualities = currentSources.filter(s => s.quality).map(s => s.quality!);
+  // Quality selector - use original sources prop to keep all qualities available
+  const qualities = sources.filter(s => s.quality).map(s => s.quality!);
   const uniqueQualities = ['auto', ...Array.from(new Set(qualities))];
 
-  const handleQualityChange = (quality: string) => {
+  const handleQualityChange = useCallback((quality: string) => {
     setCurrentQuality(quality);
     setShowSettingsMenu(false);
     onQualityChange?.(quality);
     
-    if (quality !== 'auto') {
-      const qualitySource = currentSources.find(s => s.quality === quality);
+    if (quality === 'auto') {
+      // Reset to all sources for auto mode
+      setCurrentSources(sources);
+      isChangingQuality.current = false;
+    } else {
+      // Find and set the selected quality source
+      const qualitySource = sources.find(s => s.quality === quality);
       if (qualitySource && videoRef.current) {
         const currentTime = videoRef.current.currentTime;
         const wasPlaying = !videoRef.current.paused;
+        const currentActiveSubtitle = activeSubtitle; // Save current subtitle state
         
+        // Mark that we're changing quality to prevent default subtitle effect
+        isChangingQuality.current = true;
+        
+        // Update source but keep original sources list for quality selector
         setCurrentSources([qualitySource]);
         
-        setTimeout(() => {
+        // Wait for video to load new source, then restore state
+        const restoreState = () => {
           if (videoRef.current) {
             videoRef.current.currentTime = currentTime;
             if (wasPlaying) {
               videoRef.current.play();
             }
+            
+            // Re-enable subtitles after tracks are loaded
+            const restoreSubtitles = () => {
+              if (!videoRef.current) {
+                isChangingQuality.current = false;
+                return;
+              }
+              
+              // Check if tracks are ready and we had an active subtitle
+              if (currentActiveSubtitle >= 0 && videoRef.current.textTracks.length > 0) {
+                // Wait for text tracks to be properly loaded
+                let attempts = 0;
+                const maxAttempts = 20; // Wait up to 2 seconds
+                
+                const tryRestoreSubtitles = () => {
+                  if (!videoRef.current || attempts >= maxAttempts) {
+                    isChangingQuality.current = false;
+                    return;
+                  }
+                  
+                  if (videoRef.current.textTracks.length > 0 && currentActiveSubtitle < videoRef.current.textTracks.length) {
+                    try {
+                      // Disable all tracks first
+                      for (let i = 0; i < videoRef.current.textTracks.length; i++) {
+                        videoRef.current.textTracks[i].mode = 'hidden';
+                      }
+                      // Re-enable the previously active subtitle
+                      videoRef.current.textTracks[currentActiveSubtitle].mode = 'showing';
+                      isChangingQuality.current = false;
+                    } catch (error) {
+                      console.warn('Failed to restore subtitle track:', error);
+                      attempts++;
+                      setTimeout(tryRestoreSubtitles, 100);
+                    }
+                  } else {
+                    attempts++;
+                    setTimeout(tryRestoreSubtitles, 100);
+                  }
+                };
+                
+                tryRestoreSubtitles();
+              } else {
+                // No subtitle was active, just reset the flag
+                isChangingQuality.current = false;
+              }
+            };
+            
+            // Start subtitle restoration after metadata is loaded
+            setTimeout(restoreSubtitles, 50);
+            
+            videoRef.current.removeEventListener('loadedmetadata', restoreState);
           }
-        }, 100);
+        };
+        
+        videoRef.current.addEventListener('loadedmetadata', restoreState);
       }
-    };
-  };
+    }
+  }, [activeSubtitle, sources, onQualityChange]);
 
   // Close playlist when clicking outside
   const handleContainerClick = useCallback((e: React.MouseEvent) => {
@@ -557,20 +765,26 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
         {/* Progress Bar */}
         <div className="px-4">
           <div
+            ref={progressBarRef}
             className="w-full h-1 cursor-pointer group"
             style={{ backgroundColor: 'rgba(255, 255, 255, 0.3)' }}
             onClick={handleProgressClick}
+            onMouseDown={handleProgressMouseDown}
           >
           <div
-            className="h-full relative group-hover:h-2 transition-all"
+            className="h-full relative group-hover:h-2 pointer-events-none"
             style={{ 
-              width: `${(currentTime / duration) * 100 || 0}%`,
-              backgroundColor: currentTheme.accentColor || currentTheme.secondaryColor
+              width: `${((seekPreviewTime ?? currentTime) / duration) * 100 || 0}%`,
+              backgroundColor: currentTheme.accentColor || currentTheme.secondaryColor,
+              transition: 'none'
             }}
           >
             <div 
-              className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 rounded-full opacity-0 group-hover:opacity-100" 
-              style={{ backgroundColor: currentTheme.accentColor || currentTheme.secondaryColor }}
+              className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 rounded-full opacity-0 group-hover:opacity-100 transition-opacity" 
+              style={{ 
+                backgroundColor: currentTheme.accentColor || currentTheme.secondaryColor,
+                opacity: isDraggingProgress.current ? 1 : undefined
+              }}
             />
           </div>
           </div>

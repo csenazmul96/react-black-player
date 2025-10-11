@@ -37,7 +37,7 @@ const App: React.FC = () => {
       src: '/subtitles/english.vtt',
       label: 'English',
       srclang: 'en',
-      default: false,
+      default: true,
     },
     {
       src: '/subtitles/spanish.vtt',

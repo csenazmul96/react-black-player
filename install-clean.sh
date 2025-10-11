@@ -33,14 +33,14 @@ cd "$TEST_PROJECT_PATH" || exit 1
 echo -e "${GREEN}Step 1:${NC} Uninstalling old package..."
 npm uninstall react-black-player 2>/dev/null || echo "Package not installed"
 
-echo -e "\n${GREEN}Step 2:${NC} Cleaning npm cache..."
-npm cache clean --force
-
-echo -e "\n${GREEN}Step 3:${NC} Removing node_modules and lock files..."
+echo -e "\n${GREEN}Step 2:${NC} Removing node_modules and lock files..."
 rm -rf node_modules package-lock.json
 
-echo -e "\n${GREEN}Step 4:${NC} Removing Vite cache..."
-rm -rf node_modules/.vite .vite
+echo -e "\n${GREEN}Step 3:${NC} Removing all Vite cache directories..."
+rm -rf .vite dist/.vite node_modules/.vite
+
+echo -e "\n${GREEN}Step 4:${NC} Cleaning npm cache..."
+npm cache clean --force
 
 echo -e "\n${GREEN}Step 5:${NC} Installing new package..."
 npm install "$PACKAGE_PATH"

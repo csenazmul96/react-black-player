@@ -4,6 +4,44 @@
 
 When you install the package in your test project, Vite/Node may cache the old version. Follow these steps to ensure a clean installation:
 
+## Complete Uninstall (Recommended Before Reinstalling)
+
+If you need to completely remove the package and all caches:
+
+### Automated Uninstall Script
+
+```bash
+# From the cccc directory
+cd /Users/lynkto/Projects/cccc
+./uninstall-clean.sh /Users/lynkto/Projects/video-player-test
+
+# Or from within your test project
+cd /Users/lynkto/Projects/video-player-test
+/Users/lynkto/Projects/cccc/uninstall-clean.sh
+```
+
+This script will:
+1. Uninstall react-black-player
+2. Remove node_modules
+3. Remove package-lock.json  
+4. Remove all Vite cache (.vite, dist/.vite, node_modules/.vite)
+5. Clean npm cache
+6. Verify cleanup
+
+### Manual Uninstall
+
+```bash
+cd /Users/lynkto/Projects/video-player-test
+
+# Uninstall package
+npm uninstall react-black-player
+
+# Remove all caches and dependencies
+rm -rf node_modules package-lock.json
+rm -rf .vite dist/.vite node_modules/.vite
+npm cache clean --force
+```
+
 ## Steps to Install/Update Package
 
 ### 1. In Your Test Project Directory

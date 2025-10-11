@@ -39,7 +39,10 @@
   background: rgba(80, 80, 80, 0.9);
 }
 
-/* Remove all outlines from interactive elements */
+/* Remove all outlines from interactive elements - High specificity for package isolation */
+.react-black-player *:focus,
+.react-black-player *:active,
+.react-black-player *:focus-visible,
 *:focus,
 *:active,
 *:focus-visible {
@@ -47,6 +50,11 @@
   box-shadow: none !important;
 }
 
+.react-black-player button,
+.react-black-player input,
+.react-black-player video,
+.react-black-player svg,
+.react-black-player a,
 button,
 input,
 video,
@@ -55,6 +63,16 @@ a {
   outline: none !important;
 }
 
+.react-black-player button:focus,
+.react-black-player button:active,
+.react-black-player button:focus-visible,
+.react-black-player button:hover,
+.react-black-player input:focus,
+.react-black-player input:active,
+.react-black-player input:focus-visible,
+.react-black-player video:focus,
+.react-black-player video:active,
+.react-black-player video:focus-visible,
 button:focus,
 button:active,
 button:focus-visible,
@@ -82,9 +100,7 @@ input[type="range"]::-webkit-slider-track {
   height: 4px !important;
   border-radius: 2px;
 }
-.react-video-player-volumn-controller input[type="range"]{
-  height: 4px;
-}
+
 input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;

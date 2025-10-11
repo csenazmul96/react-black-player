@@ -16,11 +16,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Volume slider track height now properly enforced with !important flag
 - Settings menu dropdowns now have smooth accordion-style animations
 - Theme dropdown properly closes with smooth transition
+- Playlist toggle button now always visible (not hidden when controls auto-hide)
+- Removed height constraint on input[type="range"] that was causing layout issues
 
 ### Improved
 - Demo now includes multiple actual quality sources (1080p HLS, 720p, 480p, 360p)
 - Playlist items now demonstrate quality options with different video sources
 - Better visual feedback with animated chevron icons in settings dropdowns
+- Increased CSS specificity with `.react-black-player` scoping for better isolation in packaged builds
+- Ensured consistent styling between dev and production builds
+- Removed unused CSS class names and styles for cleaner codebase
+- Playlist toggle button now shows/hides with player controls on hover
 
 ## [1.0.0] - 2025-01-11
 

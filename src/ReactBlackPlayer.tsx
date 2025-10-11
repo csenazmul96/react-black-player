@@ -33,6 +33,7 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
   showPlaylist = true,
   showNextPrev = true,
   showPictureInPicture = false,
+  showControls: showControlsProp = true,
   playlist = [],
   autoPlayNext = true,
   autoPlay = false,
@@ -75,7 +76,7 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
   const [seekPreviewTime, setSeekPreviewTime] = useState<number | null>(null);
   const [volume, setVolume] = useState(muted ? 0 : 1);
   const [isMuted, setIsMuted] = useState(muted);
-  const [showControls, setShowControls] = useState(true);
+  const [showControlsState, setShowControlsState] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [playbackRate, setPlaybackRate] = useState(1);
   const [currentQuality, setCurrentQuality] = useState<string>('auto');
@@ -178,10 +179,10 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
     if (hideControlsTimeout.current) {
       clearTimeout(hideControlsTimeout.current);
     }
-    setShowControls(true);
+    setShowControlsState(true);
     hideControlsTimeout.current = setTimeout(() => {
       if (isPlaying) {
-        setShowControls(false);
+        setShowControlsState(false);
       }
     }, 3000);
   }, [isPlaying]);
@@ -192,7 +193,7 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
 
   const handleMouseLeave = useCallback(() => {
     if (isPlaying) {
-      setShowControls(false);
+      setShowControlsState(false);
     }
     // Close playlist when mouse leaves player
     if (showPlaylistSidebar) {
@@ -354,6 +355,115 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
       setIsFullscreen(false);
       onFullscreenChange?.(false);
     }
+  }, [onFullscreenChange]);
+
+  // Keyboard controls
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    // Ignore keyboard events when typing in input fields
+    const target = e.target as HTMLElement;
+    if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
+      return;
+    }
+
+    switch (e.code) {
+      case 'Space':
+        e.preventDefault();
+        togglePlay();
+        break;
+
+      case 'ArrowLeft':
+        e.preventDefault();
+        // Seek backward 10 seconds
+        video.currentTime = Math.max(0, video.currentTime - 10);
+        setCurrentTime(video.currentTime);
+        onSeeked?.();
+        break;
+
+      case 'ArrowRight':
+        e.preventDefault();
+        // Seek forward 10 seconds
+        video.currentTime = Math.min(duration, video.currentTime + 10);
+        setCurrentTime(video.currentTime);
+        onSeeked?.();
+        break;
+
+      case 'ArrowUp':
+        e.preventDefault();
+        // Volume up by 10%
+        handleVolumeChange(Math.min(1, volume + 0.1));
+        break;
+
+      case 'ArrowDown':
+        e.preventDefault();
+        // Volume down by 10%
+        handleVolumeChange(Math.max(0, volume - 0.1));
+        break;
+
+      case 'Enter':
+        e.preventDefault();
+        // Enter fullscreen only - check actual document state, not component state
+        if (!document.fullscreenElement) {
+          const container = containerRef.current;
+          if (container) {
+            container.requestFullscreen().catch((err) => {
+              console.error('Error attempting to enable fullscreen:', err);
+            });
+          }
+        }
+        break;
+
+      case 'Escape':
+        // Exit fullscreen - check actual document state, not component state
+        // Don't preventDefault to allow browser's native ESC behavior
+        if (document.fullscreenElement) {
+          document.exitFullscreen().catch((err) => {
+            console.error('Error attempting to exit fullscreen:', err);
+          });
+        }
+        break;
+
+      default:
+        break;
+    }
+  }, [togglePlay, duration, volume, handleVolumeChange, onSeeked]);
+
+  // Add keyboard event listener
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    // Make container focusable to receive keyboard events
+    container.tabIndex = 0;
+
+    container.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      container.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [handleKeyDown]);
+
+  // Listen to fullscreen changes to keep state in sync
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      const isCurrentlyFullscreen = !!document.fullscreenElement;
+      setIsFullscreen(isCurrentlyFullscreen);
+      onFullscreenChange?.(isCurrentlyFullscreen);
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+    document.addEventListener('msfullscreenchange', handleFullscreenChange);
+
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('msfullscreenchange', handleFullscreenChange);
+    };
   }, [onFullscreenChange]);
 
   // Picture-in-Picture
@@ -881,9 +991,10 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
       )}
 
       {/* Controls */}
+      {showControlsProp && (
       <div
         className={`absolute bottom-0 left-0 right-0 transition-opacity duration-300 z-40 ${
-          showControls ? 'opacity-100' : 'opacity-0'
+          showControlsState ? 'opacity-100' : 'opacity-0'
         }`}
         style={{
           background: `linear-gradient(to top, ${currentTheme.primaryColor}, ${currentTheme.primaryColor}CC, transparent)`
@@ -1348,6 +1459,7 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
           </div>
         </div>
       </div>
+      )}
 
       {/* Playlist Sidebar Trigger */}
       {showPlaylist && playlist.length > 0 && (
@@ -1357,7 +1469,7 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
             setShowPlaylistSidebar(!showPlaylistSidebar);
           }}
           className={`absolute top-1/2 -translate-y-1/2 rounded-full p-2 transition-all duration-300 z-20 ${
-            showControls ? 'opacity-100' : 'opacity-0'
+            showControlsState ? 'opacity-100' : 'opacity-0'
           }`}
           style={{
             right: showPlaylistSidebar ? '320px' : '16px',

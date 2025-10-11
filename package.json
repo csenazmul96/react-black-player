@@ -1,7 +1,7 @@
 {
   "name": "react-black-player",
-  "version": "1.0.2",
-  "description": "A modern, feature-rich, and highly customizable video player component for React with HLS support, playlists, themes, and subtitles",
+  "version": "1.1.1",
+  "description": "A modern, feature-rich, and highly customizable video player component for React with HLS support, playlists, themes, subtitles, and full keyboard controls",
   "main": "dist/index.js",
   "module": "dist/index.esm.js",
   "types": "dist/index.d.ts",
@@ -36,6 +36,8 @@
     "streaming",
     "fullscreen",
     "controls",
+    "keyboard-controls",
+    "accessibility",
     "modern",
     "portrait-video",
     "landscape-video"
@@ -56,8 +58,7 @@
   },
   "dependencies": {
     "hls.js": "^1.5.7",
-    "lucide-react": "^0.445.0",
-    "react-black-player": "file:react-black-player-1.0.1.tgz"
+    "lucide-react": "^0.445.0"
   },
   "devDependencies": {
     "@types/node": "^20.11.5",

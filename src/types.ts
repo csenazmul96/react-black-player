@@ -116,6 +116,8 @@ export interface ReactBlackPlayerConfig {
   showNextPrev?: boolean;
   /** Show/hide Picture-in-Picture button */
   showPictureInPicture?: boolean;
+  /** Show/hide all player controls */
+  showControls?: boolean;
   
   // Text customization
   /** Custom text labels for UI elements */

@@ -22,7 +22,6 @@ import './styles.css';
 
 export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
   sources,
-  poster,
   className = '',
   subtitles = [],
   showTime = true,
@@ -36,7 +35,7 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
   showControls: showControlsProp = true,
   protectSource = false,
   playlist = [],
-  autoPlayNext = true,
+  autoPlayNext,
   loopCurrentVideo = false,
   autoPlay = false,
   muted = false,
@@ -106,8 +105,8 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
   const [isPictureInPicture, setIsPictureInPicture] = useState(false);
   const [nextVideoPoster, setNextVideoPoster] = useState<string | undefined>(undefined);
   
-  // Get current poster from video source or fallback to poster prop
-  const currentPoster = currentSources[0]?.poster || poster;
+  // Get current poster from video source only (no fallback)
+  const currentPoster = currentSources[0]?.poster;
   
   // Settings dropdown states
   const [speedDropdownOpen, setSpeedDropdownOpen] = useState(true);
@@ -790,9 +789,9 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
         const isLastVideo = currentPlaylistIndex === playlist.length - 1;
         
         if (!isLastVideo) {
-          // Get next video's poster from source or fallback to thumbnail
+          // Get next video's poster from source only (no fallback)
           const nextItem = playlist[currentPlaylistIndex + 1];
-          const nextPoster = nextItem?.sources[0]?.poster || nextItem?.thumbnail;
+          const nextPoster = nextItem?.sources[0]?.poster;
           setNextVideoPoster(nextPoster);
         }
         

@@ -13,11 +13,13 @@ const App: React.FC = () => {
       src: 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8',
       type: 'application/x-mpegURL',
       quality: '1080p',
+      poster: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/images/BigBuckBunny.jpg',
     },
     {
       src: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
       type: 'video/mp4',
       quality: '720p',
+      poster: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/images/BigBuckBunny.jpg',
     },
     {
       src: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
@@ -58,6 +60,7 @@ const App: React.FC = () => {
           src: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
           type: 'video/mp4',
           quality: '720p',
+          poster: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/images/BigBuckBunny.jpg',
         },
         {
           src: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
@@ -76,6 +79,7 @@ const App: React.FC = () => {
           src: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
           type: 'video/mp4',
           quality: '1080p',
+          poster: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/images/ElephantsDream.jpg',
         },
         {
           src: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
@@ -93,6 +97,7 @@ const App: React.FC = () => {
         {
           src: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
           type: 'video/mp4',
+          poster: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/images/ForBiggerBlazes.jpg',
         },
       ],
       subtitles: sampleSubtitles,
@@ -105,6 +110,7 @@ const App: React.FC = () => {
         {
           src: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
           type: 'video/mp4',
+          poster: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/images/ForBiggerEscapes.jpg',
         },
       ],
       subtitles: sampleSubtitles,
@@ -117,6 +123,7 @@ const App: React.FC = () => {
         {
           src: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4',
           type: 'video/mp4',
+          poster: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/images/ForBiggerFun.jpg',
         },
       ],
       subtitles: sampleSubtitles,
@@ -129,6 +136,7 @@ const App: React.FC = () => {
         {
           src: '/4678261-hd_1080_1920_25fps.mp4',
           type: 'video/mp4',
+          poster: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/images/Sintel.jpg',
         },
       ],
       subtitles: [],
@@ -152,7 +160,6 @@ const App: React.FC = () => {
         <p className="text-gray-500 text-center mb-6 text-sm">Custom labels example: Uncomment the labels prop to see Spanish text</p>
         <ReactBlackPlayer
           sources={videoSources}
-          poster="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/images/BigBuckBunny.jpg"
           subtitles={sampleSubtitles}
           playlist={playlist}
           showTime={true}
@@ -163,7 +170,7 @@ const App: React.FC = () => {
           showPlaylist={true}
           showNextPrev={true}
           showPictureInPicture={true}
-          autoPlayNext={true}
+          autoPlayNext={false}
           loopCurrentVideo={false}
           aspectRatio="16/9"
           themeConfig={{

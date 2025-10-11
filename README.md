@@ -20,6 +20,7 @@ A modern, feature-rich, and highly customizable video player component for React
 - 🎮 **Smooth Seeking** - Drag-to-seek with instant visual feedback
 - ⏳ **Buffering Indicator** - Beautiful loading spinner during buffering
 - 🎨 **Hover Effects** - Smooth animations and transitions
+- 🌍 **Internationalization** - Custom text labels for any language
 - ⌨️ **Keyboard Shortcuts** - (Coming soon)
 - 📦 **TypeScript Support** - Full type definitions included
 
@@ -266,6 +267,30 @@ The player automatically detects and handles portrait videos intelligently:
 ```
 
 No additional configuration needed - the player automatically adapts!
+
+### Custom Labels / Internationalization
+
+Customize all UI text labels for different languages or custom terminology:
+
+```tsx
+<ReactBlackPlayer
+  sources={[
+    {
+      src: '/videos/video.mp4',
+      type: 'video/mp4',
+    },
+  ]}
+  labels={{
+    playlist: 'Lista de reproducción',  // Spanish example
+    speed: 'Velocidad',
+    subtitles: 'Subtítulos',
+    quality: 'Calidad',
+    theme: 'Tema',
+  }}
+/>
+```
+
+See [CUSTOM_LABELS_EXAMPLE.md](CUSTOM_LABELS_EXAMPLE.md) for examples in multiple languages (Spanish, French, German, Japanese, Chinese, Arabic, etc.).
 
 ## 📚 API Reference
 

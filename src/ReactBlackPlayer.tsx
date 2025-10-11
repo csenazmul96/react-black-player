@@ -12,6 +12,8 @@ import {
   ChevronLeft,
   ChevronDown,
   Palette,
+  RotateCcw,
+  PictureInPicture,
 } from 'lucide-react';
 import Hls from 'hls.js';
 import type { ReactBlackPlayerProps, Theme, SubtitleTrack } from './types';
@@ -30,6 +32,7 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
   showSubtitles = true,
   showPlaylist = true,
   showNextPrev = true,
+  showPictureInPicture = false,
   playlist = [],
   autoPlayNext = true,
   autoPlay = false,
@@ -40,6 +43,7 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
   height = 'auto',
   aspectRatio = '9/16',
   themeConfig,
+  labels,
   onPlay,
   onPause,
   onEnded,
@@ -85,6 +89,8 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
   const [showCenterPlay, setShowCenterPlay] = useState(!autoPlay);
   const [isBuffering, setIsBuffering] = useState(false);
   const [videoAspectRatio, setVideoAspectRatio] = useState<number | null>(null);
+  const [isVideoEnded, setIsVideoEnded] = useState(false);
+  const [isPictureInPicture, setIsPictureInPicture] = useState(false);
   
   // Settings dropdown states
   const [speedDropdownOpen, setSpeedDropdownOpen] = useState(true);
@@ -100,6 +106,15 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
     }
     return availableThemes[0]; // Default to first theme (Dark)
   });
+
+  // Text labels with defaults
+  const textLabels = {
+    playlist: labels?.playlist || 'Playlist',
+    speed: labels?.speed || 'Speed',
+    subtitles: labels?.subtitles || 'Subtitles',
+    quality: labels?.quality || 'Quality',
+    theme: labels?.theme || 'Theme',
+  };
 
   // Initialize HLS if needed
   useEffect(() => {
@@ -189,7 +204,7 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
     }
   }, [isPlaying, showPlaylistSidebar, showSettingsMenu]);
 
-  // Play/Pause
+  // Play/Pause with reload support
   const togglePlay = useCallback(() => {
     const video = videoRef.current;
     if (!video) return;
@@ -197,6 +212,20 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
     // Close playlist if open
     if (showPlaylistSidebar) {
       setShowPlaylistSidebar(false);
+    }
+
+    // If video ended, reload from beginning
+    if (isVideoEnded) {
+      video.currentTime = 0;
+      setIsVideoEnded(false);
+      video.play().then(() => {
+        onPlay?.();
+      }).catch((error) => {
+        console.error('Error playing video:', error);
+        setIsPlaying(false);
+        setShowCenterPlay(true);
+      });
+      return;
     }
 
     if (video.paused) {
@@ -211,7 +240,7 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
       video.pause();
       onPause?.();
     }
-  }, [onPlay, onPause, showPlaylistSidebar]);
+  }, [onPlay, onPause, showPlaylistSidebar, isVideoEnded]);
 
   // Volume control
   const handleVolumeChange = useCallback((newVolume: number) => {
@@ -326,6 +355,24 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
       onFullscreenChange?.(false);
     }
   }, [onFullscreenChange]);
+
+  // Picture-in-Picture
+  const togglePictureInPicture = useCallback(async () => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    try {
+      if (document.pictureInPictureElement) {
+        await document.exitPictureInPicture();
+        setIsPictureInPicture(false);
+      } else if (document.pictureInPictureEnabled) {
+        await video.requestPictureInPicture();
+        setIsPictureInPicture(true);
+      }
+    } catch (error) {
+      console.error('Picture-in-Picture error:', error);
+    }
+  }, []);
 
   // Helper function to find the best subtitle match
   const findBestSubtitleMatch = useCallback((subtitles: SubtitleTrack[]) => {
@@ -538,11 +585,16 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
     const handleEnded = () => {
       setIsPlaying(false);
       setShowCenterPlay(true);
-      onEnded?.();
       
+      // Only set video ended if NOT auto-playing next
       if (autoPlayNext && playlist.length > 0) {
         playNextVideo();
+        setIsVideoEnded(false);
+      } else {
+        setIsVideoEnded(true);
       }
+      
+      onEnded?.();
     };
 
     const handleCanPlay = () => {
@@ -557,6 +609,7 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
     const handlePlay = () => {
       setIsPlaying(true);
       setShowCenterPlay(false);
+      setIsVideoEnded(false);
     };
 
     const handlePause = () => {
@@ -572,6 +625,7 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
       setIsPlaying(true);
       setShowCenterPlay(false);
       setIsBuffering(false);
+      setIsVideoEnded(false);
     };
 
     const handleCanPlayThrough = () => {
@@ -587,6 +641,14 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
       setCurrentTime(video.currentTime);
     };
 
+    const handleEnterPiP = () => {
+      setIsPictureInPicture(true);
+    };
+
+    const handleLeavePiP = () => {
+      setIsPictureInPicture(false);
+    };
+
     video.addEventListener('timeupdate', handleTimeUpdate);
     video.addEventListener('loadedmetadata', handleLoadedMetadata);
     video.addEventListener('ended', handleEnded);
@@ -599,6 +661,8 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
     video.addEventListener('playing', handlePlaying);
     video.addEventListener('canplaythrough', handleCanPlayThrough);
     video.addEventListener('stalled', handleStalled);
+    video.addEventListener('enterpictureinpicture', handleEnterPiP);
+    video.addEventListener('leavepictureinpicture', handleLeavePiP);
 
     return () => {
       video.removeEventListener('timeupdate', handleTimeUpdate);
@@ -613,6 +677,8 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
       video.removeEventListener('playing', handlePlaying);
       video.removeEventListener('canplaythrough', handleCanPlayThrough);
       video.removeEventListener('stalled', handleStalled);
+      video.removeEventListener('enterpictureinpicture', handleEnterPiP);
+      video.removeEventListener('leavepictureinpicture', handleLeavePiP);
     };
   }, [onTimeUpdate, onLoadedMetadata, onEnded, onCanPlay, onSeeking, autoPlayNext, playlist.length, playNextVideo]);
 
@@ -725,7 +791,7 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
       {/* Video Element */}
       <video
         ref={videoRef}
-        className="w-full h-full"
+        className={`w-full h-full ${isBuffering ? 'buffering' : ''}`}
         style={{
           objectFit: 'contain', // Always contain to show full video with black bars
           backgroundColor: '#000000'
@@ -770,12 +836,20 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
               className="absolute inset-0 rounded-full border-2 opacity-20"
               style={{ borderColor: currentTheme.textColor }}
             ></div>
-            <Play 
-              className="w-10 h-10 ml-1" 
-              strokeWidth={1} 
-              fill={currentTheme.primaryColor}
-              style={{ color: currentTheme.textColor }}
-            />
+            {isVideoEnded ? (
+              <RotateCcw 
+                className="w-10 h-10" 
+                strokeWidth={1.5}
+                style={{ color: currentTheme.textColor }}
+              />
+            ) : (
+              <Play 
+                className="w-10 h-10 ml-1" 
+                strokeWidth={1} 
+                fill={currentTheme.primaryColor}
+                style={{ color: currentTheme.textColor }}
+              />
+            )}
           </div>
         </div>
       )}
@@ -867,6 +941,8 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
             >
               {isPlaying ? (
                 <Pause className="w-6 h-6" strokeWidth={1} />
+              ) : isVideoEnded ? (
+                <RotateCcw className="w-6 h-6" strokeWidth={1.5} />
               ) : (
                 <Play className="w-6 h-6" strokeWidth={1} />
               )}
@@ -972,6 +1048,31 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
               </div>
             )}
 
+            {/* Picture-in-Picture */}
+            {showPictureInPicture && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  togglePictureInPicture();
+                }}
+                className="transition-colors"
+                style={{ color: isPictureInPicture ? (currentTheme.accentColor || currentTheme.secondaryColor) : currentTheme.textColor }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = currentTheme.accentColor || currentTheme.secondaryColor;
+                }}
+                onMouseLeave={(e) => {
+                    if (currentTheme.textColor != null && !isPictureInPicture) {
+                        e.currentTarget.style.color = currentTheme.textColor;
+                    } else if (isPictureInPicture) {
+                        e.currentTarget.style.color = currentTheme.accentColor || currentTheme.secondaryColor;
+                    }
+                }}
+                title="Picture-in-Picture"
+              >
+                <PictureInPicture className="w-5 h-5" strokeWidth={1} />
+              </button>
+            )}
+
             {/* Settings */}
             {showSettings && (
               <div className="relative">
@@ -1018,7 +1119,7 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
                         className="w-full px-4 py-2 flex items-center justify-between text-xs transition-colors"
                         style={{ color: `${currentTheme.textColor}80` }}
                       >
-                        <span>Speed</span>
+                        <span>{textLabels.speed}</span>
                         <ChevronDown 
                           className={`w-4 h-4 transition-transform duration-200 ${speedDropdownOpen ? 'rotate-180' : ''}`}
                           strokeWidth={1}
@@ -1067,7 +1168,7 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
                           className="w-full px-4 py-2 flex items-center justify-between text-xs transition-colors"
                           style={{ color: `${currentTheme.textColor}80` }}
                         >
-                          <span>Subtitles</span>
+                          <span>{textLabels.subtitles}</span>
                           <ChevronDown 
                             className={`w-4 h-4 transition-transform duration-200 ${subtitleDropdownOpen ? 'rotate-180' : ''}`}
                             strokeWidth={1}
@@ -1136,7 +1237,7 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
                           className="w-full px-4 py-2 flex items-center justify-between text-xs transition-colors"
                           style={{ color: `${currentTheme.textColor}80` }}
                         >
-                          <span>Quality</span>
+                          <span>{textLabels.quality}</span>
                           <ChevronDown 
                             className={`w-4 h-4 transition-transform duration-200 ${qualityDropdownOpen ? 'rotate-180' : ''}`}
                             strokeWidth={1}
@@ -1186,7 +1287,7 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
                           className="w-full px-4 py-2 flex items-center justify-between text-xs transition-colors"
                           style={{ color: `${currentTheme.textColor}80` }}
                         >
-                          <span>Theme</span>
+                          <span>{textLabels.theme}</span>
                           <ChevronDown 
                             className={`w-4 h-4 transition-transform duration-200 ${themeDropdownOpen ? 'rotate-180' : ''}`}
                             strokeWidth={1}
@@ -1293,7 +1394,7 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
         >
           <div className="h-full flex flex-col">
             <div className="px-4 py-3 border-b" style={{ borderColor: currentTheme.primaryColor }}>
-              <h3 className="font-semibold" style={{ color: currentTheme.textColor }}>Playlist</h3>
+              <h3 className="font-semibold" style={{ color: currentTheme.textColor }}>{textLabels.playlist}</h3>
             </div>
             <div className="flex-1 overflow-y-auto playlist-scrollbar">
               {playlist.map((item, index) => (

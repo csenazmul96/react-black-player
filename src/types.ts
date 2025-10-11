@@ -78,6 +78,23 @@ export interface SubtitleTrack {
 }
 
 /**
+ * Text labels for UI customization and internationalization
+ * @interface TextLabels
+ */
+export interface TextLabels {
+  /** Playlist sidebar heading */
+  playlist?: string;
+  /** Settings menu - Speed section label */
+  speed?: string;
+  /** Settings menu - Subtitles section label */
+  subtitles?: string;
+  /** Settings menu - Quality section label */
+  quality?: string;
+  /** Settings menu - Theme section label */
+  theme?: string;
+}
+
+/**
  * Configuration options for the React Black Player
  * @interface ReactBlackPlayerConfig
  */
@@ -97,6 +114,12 @@ export interface ReactBlackPlayerConfig {
   showPlaylist?: boolean;
   /** Show/hide previous/next buttons when playlist is available */
   showNextPrev?: boolean;
+  /** Show/hide Picture-in-Picture button */
+  showPictureInPicture?: boolean;
+  
+  // Text customization
+  /** Custom text labels for UI elements */
+  labels?: TextLabels;
   
   // Playlist
   /** Array of playlist items */

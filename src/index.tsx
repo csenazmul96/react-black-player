@@ -9,4 +9,5 @@ export type {
   ReactBlackPlayerProps,
   Theme,
   ThemeConfig,
+  TextLabels,
 } from './types';

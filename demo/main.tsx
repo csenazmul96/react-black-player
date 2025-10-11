@@ -149,6 +149,7 @@ const App: React.FC = () => {
       <div className="max-w-4xl mx-auto">
         <h1 className="text-white text-3xl font-bold mb-6 text-center">React Black Player</h1>
         <p className="text-gray-400 text-center mb-4">Try the vertical video (item 6) to see portrait mode handling</p>
+        <p className="text-gray-500 text-center mb-6 text-sm">Custom labels example: Uncomment the labels prop to see Spanish text</p>
         <ReactBlackPlayer
           sources={videoSources}
           poster="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/images/BigBuckBunny.jpg"
@@ -161,6 +162,7 @@ const App: React.FC = () => {
           showSubtitles={true}
           showPlaylist={true}
           showNextPrev={true}
+          showPictureInPicture={true}
           autoPlayNext={true}
           aspectRatio="16/9"
           themeConfig={{
@@ -169,6 +171,14 @@ const App: React.FC = () => {
             customThemes: [customTheme],
             defaultTheme: 'Dark'
           }}
+          // Uncomment to use custom labels (e.g., for Spanish)
+          // labels={{
+          //   playlist: 'Lista de reproducción',
+          //   speed: 'Velocidad',
+          //   subtitles: 'Subtítulos',
+          //   quality: 'Calidad',
+          //   theme: 'Tema',
+          // }}
           onPlay={() => console.log('Video played')}
           onPause={() => console.log('Video paused')}
           onTimeUpdate={(time) => console.log('Time update:', time)}

@@ -36,7 +36,7 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
   showControls: showControlsProp = true,
   protectSource = false,
   playlist = [],
-  autoPlayNext = false,
+  autoPlayNext = true,
   loopCurrentVideo = false,
   autoPlay = false,
   muted = false,
@@ -58,6 +58,7 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
   onPlaybackRateChange,
   onFullscreenChange,
   onPlaylistItemChange,
+  onNextVideoPlay,
   onThemeChange,
   onError,
   onLoadedMetadata,
@@ -103,6 +104,7 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
   const [videoAspectRatio, setVideoAspectRatio] = useState<number | null>(null);
   const [isVideoEnded, setIsVideoEnded] = useState(false);
   const [isPictureInPicture, setIsPictureInPicture] = useState(false);
+  const [nextVideoPoster, setNextVideoPoster] = useState<string | undefined>(undefined);
   
   // Settings dropdown states
   const [speedDropdownOpen, setSpeedDropdownOpen] = useState(true);
@@ -141,6 +143,7 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
     setShowCenterPlay(!autoPlay);
     setCurrentTime(0);
     setDuration(0);
+    setIsVideoEnded(false);
 
     // Check if source is m3u8
     const isHLS = mainSource.src.includes('.m3u8') || mainSource.type === 'application/x-mpegURL';
@@ -573,20 +576,31 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
     const nextSubtitles = nextItem.subtitles || [];
     const bestSubtitleIndex = findBestSubtitleMatch(nextSubtitles);
     
+    // Update state immediately for smooth transition
+    setIsVideoEnded(false);
+    setShowCenterPlay(false);
     setCurrentPlaylistIndex(nextIndex);
     setCurrentSources(nextItem.sources);
     setCurrentSubtitles(nextSubtitles);
     setActiveSubtitle(bestSubtitleIndex);
-    setShowCenterPlay(false);
-    onPlaylistItemChange?.(nextItem, nextIndex);
     
-    // Auto play next video
+    // Trigger callbacks
+    onPlaylistItemChange?.(nextItem, nextIndex);
+    onNextVideoPlay?.(nextItem, nextIndex);
+    
+    // Auto play next video with minimal delay
     setTimeout(() => {
-      videoRef.current?.play();
-    }, 100);
+      const video = videoRef.current;
+      if (video) {
+        video.play().catch(() => {
+          setIsPlaying(false);
+          setShowCenterPlay(true);
+        });
+      }
+    }, 50);
     
     return true; // Indicates next video is playing
-  }, [playlist, currentPlaylistIndex, onPlaylistItemChange, findBestSubtitleMatch]);
+  }, [playlist, currentPlaylistIndex, onPlaylistItemChange, onNextVideoPlay, findBestSubtitleMatch]);
 
   const playPreviousVideo = useCallback(() => {
     if (!playlist.length) return;
@@ -753,7 +767,6 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
 
     const handleEnded = () => {
       setIsPlaying(false);
-      setShowCenterPlay(true);
       
       // Check if we should loop the current video - use ref to get latest value
       if (loopCurrentVideoRef.current) {
@@ -771,16 +784,32 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
       
       // Check if we should auto-play next video - use ref to get latest value
       if (autoPlayNextRef.current && playlist.length > 0) {
+        const isLastVideo = currentPlaylistIndex === playlist.length - 1;
+        
+        if (!isLastVideo) {
+          // Get next video's thumbnail/poster
+          const nextItem = playlist[currentPlaylistIndex + 1];
+          setNextVideoPoster(nextItem?.thumbnail);
+        }
+        
+        // Show buffering spinner during transition
+        setIsBuffering(true);
+        setShowCenterPlay(false);
+        
         const hasNextVideo = playNextVideo();
         // If playNextVideo returns false (no more videos), show ended state
         if (hasNextVideo === false) {
           setIsVideoEnded(true);
+          setShowCenterPlay(true);
+          setIsBuffering(false);
+          setNextVideoPoster(undefined);
         } else {
           setIsVideoEnded(false);
         }
       } else {
         // Not auto-playing next, show replay button
         setIsVideoEnded(true);
+        setShowCenterPlay(true);
       }
       
       onEnded?.();
@@ -815,6 +844,7 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
       setShowCenterPlay(false);
       setIsBuffering(false);
       setIsVideoEnded(false);
+      setNextVideoPoster(undefined); // Clear next video poster when playing
     };
 
     const handleCanPlayThrough = () => {
@@ -1021,12 +1051,26 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
         ))}
       </video>
 
-      {/* Poster overlay when video ends */}
-      {isVideoEnded && poster && (
+      {/* Poster overlay when video truly ends (not auto-playing next) */}
+      {isVideoEnded && showCenterPlay && poster && (
         <div
           className="absolute inset-0 z-5 pointer-events-none"
           style={{
             backgroundImage: `url(${poster})`,
+            backgroundSize: 'contain',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat',
+            backgroundColor: '#000000',
+          }}
+        />
+      )}
+
+      {/* Next video poster overlay during transition */}
+      {isBuffering && nextVideoPoster && (
+        <div
+          className="absolute inset-0 z-5 pointer-events-none"
+          style={{
+            backgroundImage: `url(${nextVideoPoster})`,
             backgroundSize: 'contain',
             backgroundPosition: 'center',
             backgroundRepeat: 'no-repeat',

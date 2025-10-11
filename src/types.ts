@@ -185,6 +185,8 @@ export interface ReactBlackPlayerEvents {
   onFullscreenChange?: (isFullscreen: boolean) => void;
   /** Callback when playlist item changes */
   onPlaylistItemChange?: (item: PlaylistItem, index: number) => void;
+  /** Callback when auto-playing next video (triggered by autoPlayNext) */
+  onNextVideoPlay?: (item: PlaylistItem, index: number) => void;
   /** Callback when theme is changed */
   onThemeChange?: (theme: Theme) => void;
   /** Callback when an error occurs */

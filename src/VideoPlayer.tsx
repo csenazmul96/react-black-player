@@ -10,12 +10,11 @@ import {
   SkipBack,
   SkipForward,
   ChevronLeft,
-  Subtitles,
   Palette,
 } from 'lucide-react';
 import Hls from 'hls.js';
-import type { VideoPlayerProps, PlaylistItem, VideoSource, SubtitleTrack, Theme } from './types';
-import { defaultThemes, getThemeByName, createCustomTheme, applyThemeToElement } from './themes';
+import type { VideoPlayerProps, Theme } from './types';
+import { defaultThemes, getThemeByName, applyThemeToElement } from './themes';
 import './styles.css';
 
 export const VideoPlayer: React.FC<VideoPlayerProps> = ({
@@ -670,11 +669,11 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                   value={isMuted ? 0 : volume}
                   onChange={(e) => handleVolumeChange(parseFloat(e.target.value))}
                   onClick={(e) => e.stopPropagation()}
-                  className="w-0 group-hover:w-20 transition-all duration-300 h-1 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full"
+                  className="w-0 group-hover:w-20 transition-all duration-300 h-1 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-current"
                   style={{
                     background: volumeBackground,
-                    '--webkit-slider-thumb-background': currentTheme.accentColor || currentTheme.secondaryColor
-                  }}
+                    color: currentTheme.accentColor || currentTheme.secondaryColor
+                  } as React.CSSProperties}
                 />
               </div>
             )}

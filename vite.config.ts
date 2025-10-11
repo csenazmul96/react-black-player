@@ -10,6 +10,7 @@ export default defineConfig({
       insertTypesEntry: true,
     }),
   ],
+  publicDir: false, // Don't copy public folder in library mode
   build: {
     lib: {
       entry: resolve(__dirname, 'src/index.tsx'),

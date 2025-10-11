@@ -1,29 +1,55 @@
 {
   "name": "react-black-player",
   "version": "1.0.0",
-  "description": "A professional black-themed React video player with subtitle support and playlist functionality",
+  "description": "A modern, feature-rich, and highly customizable video player component for React with HLS support, playlists, themes, and subtitles",
   "main": "dist/index.js",
   "module": "dist/index.esm.js",
   "types": "dist/index.d.ts",
   "files": [
-    "dist"
+    "dist",
+    "README.md",
+    "LICENSE"
   ],
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
+    "build:watch": "tsc && vite build --watch",
     "preview": "vite preview",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build",
+    "lint": "tsc --noEmit"
   },
   "keywords": [
     "react",
     "video",
     "player",
+    "video-player",
+    "react-component",
     "hls",
     "m3u8",
-    "playlist"
+    "playlist",
+    "subtitles",
+    "themes",
+    "customizable",
+    "typescript",
+    "tailwindcss",
+    "responsive",
+    "streaming",
+    "fullscreen",
+    "controls",
+    "modern",
+    "portrait-video",
+    "landscape-video"
   ],
-  "author": "",
+  "author": "Your Name <your.email@example.com>",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/react-black-player.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/react-black-player/issues"
+  },
+  "homepage": "https://github.com/yourusername/react-black-player#readme",
   "peerDependencies": {
     "react": "^18.0.0",
     "react-dom": "^18.0.0"

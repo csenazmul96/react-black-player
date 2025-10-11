@@ -119,6 +119,10 @@ export interface ReactBlackPlayerConfig {
   /** Show/hide all player controls */
   showControls?: boolean;
   
+  // Security
+  /** Protect video source from being easily copied (disables right-click, prevents URL inspection) */
+  protectSource?: boolean;
+  
   // Text customization
   /** Custom text labels for UI elements */
   labels?: TextLabels;

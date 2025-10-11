@@ -34,6 +34,7 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
   showNextPrev = true,
   showPictureInPicture = false,
   showControls: showControlsProp = true,
+  protectSource = true,
   playlist = [],
   autoPlayNext = true,
   autoPlay = false,
@@ -466,6 +467,52 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
     };
   }, [onFullscreenChange]);
 
+  // Source protection - prevent right-click and disable certain browser features
+  useEffect(() => {
+    if (!protectSource) return;
+
+    const video = videoRef.current;
+    const container = containerRef.current;
+    if (!video || !container) return;
+
+    // Prevent right-click on video and container
+    const preventContextMenu = (e: MouseEvent) => {
+      e.preventDefault();
+      return false;
+    };
+
+    // Prevent drag events
+    const preventDrag = (e: DragEvent) => {
+      e.preventDefault();
+      return false;
+    };
+
+    // Prevent text selection
+    const preventSelection = (e: Event) => {
+      e.preventDefault();
+      return false;
+    };
+
+    video.addEventListener('contextmenu', preventContextMenu);
+    container.addEventListener('contextmenu', preventContextMenu);
+    video.addEventListener('dragstart', preventDrag);
+    container.addEventListener('dragstart', preventDrag);
+    video.addEventListener('selectstart', preventSelection);
+    container.addEventListener('selectstart', preventSelection);
+
+    // Disable controls attribute to prevent download button in some browsers
+    video.removeAttribute('controls');
+
+    return () => {
+      video.removeEventListener('contextmenu', preventContextMenu);
+      container.removeEventListener('contextmenu', preventContextMenu);
+      video.removeEventListener('dragstart', preventDrag);
+      container.removeEventListener('dragstart', preventDrag);
+      video.removeEventListener('selectstart', preventSelection);
+      container.removeEventListener('selectstart', preventSelection);
+    };
+  }, [protectSource]);
+
   // Picture-in-Picture
   const togglePictureInPicture = useCallback(async () => {
     const video = videoRef.current;
@@ -864,6 +911,12 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
       backgroundColor: currentTheme.backgroundColor || currentTheme.primaryColor,
       border: `1px solid ${currentTheme.primaryColor}`,
       color: currentTheme.textColor,
+      ...(protectSource && {
+        userSelect: 'none',
+        WebkitUserSelect: 'none',
+        MozUserSelect: 'none',
+        msUserSelect: 'none',
+      }),
     };
 
     // If video aspect ratio is available
@@ -904,8 +957,15 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
         className={`w-full h-full ${isBuffering ? 'buffering' : ''}`}
         style={{
           objectFit: 'contain', // Always contain to show full video with black bars
-          backgroundColor: '#000000'
+          backgroundColor: '#000000',
+          ...(protectSource && {
+            pointerEvents: 'auto',
+            userSelect: 'none',
+            WebkitUserSelect: 'none',
+          }),
         }}
+        controlsList={protectSource ? 'nodownload nofullscreen noremoteplayback' : undefined}
+        disablePictureInPicture={protectSource}
         poster={poster}
         autoPlay={autoPlay}
         muted={muted}

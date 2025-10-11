@@ -1,6 +1,6 @@
 {
   "name": "react-black-player",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "description": "A modern, feature-rich, and highly customizable video player component for React with HLS support, playlists, themes, subtitles, and full keyboard controls",
   "main": "dist/index.js",
   "module": "dist/index.esm.js",

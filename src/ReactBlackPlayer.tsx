@@ -934,6 +934,7 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
                     onClick={(e) => e.stopPropagation()}
                     className="w-20"
                     style={{
+                      height: '4px',
                       background: `linear-gradient(to right, ${currentTheme.accentColor || currentTheme.secondaryColor} ${(isMuted ? 0 : volume) * 100}%, rgba(255,255,255,0.3) ${(isMuted ? 0 : volume) * 100}%)`,
                       color: currentTheme.accentColor || currentTheme.secondaryColor
                     }}

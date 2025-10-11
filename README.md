@@ -2,7 +2,7 @@
 
 A modern, feature-rich, and highly customizable video player component for React applications. Built with TypeScript, TailwindCSS, and HLS.js support.
 
-![React Black Player Demo](https://img.shields.io/badge/version-1.0.0-blue.svg)
+![React Black Player Demo](https://img.shields.io/badge/version-1.0.1-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 
 ## ✨ Features

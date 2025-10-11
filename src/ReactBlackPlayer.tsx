@@ -474,7 +474,7 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
   return (
     <div
       ref={containerRef}
-      className={`relative overflow-hidden ${className}`}
+      className={`relative react-video-player-outer overflow-hidden ${className}`}
       style={{
         width: typeof width === 'number' ? `${width}px` : width,
         height: typeof height === 'number' ? `${height}px` : height,
@@ -490,7 +490,7 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
       {/* Video Element */}
       <video
         ref={videoRef}
-        className="w-full h-full"
+        className="w-full h-full react-video-player-video"
         style={{
           objectFit: videoObjectFit,
           backgroundColor: '#000000'
@@ -547,7 +547,7 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
 
       {/* Controls */}
       <div
-        className={`absolute bottom-0 left-0 right-0 transition-opacity duration-300 z-40 ${
+        className={`absolute bottom-0 left-0 react-video-player-progressbar right-0 transition-opacity duration-300 z-40 ${
           showControls ? 'opacity-100' : 'opacity-0'
         }`}
         style={{
@@ -577,8 +577,8 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
         </div>
 
         {/* Control Buttons */}
-        <div className="flex items-center justify-between px-4 py-3" onClick={closePlaylistOnControlClick}>
-          <div className="flex items-center gap-4">
+        <div className="flex items-center justify-between px-4 py-3 react-video-player-controller" onClick={closePlaylistOnControlClick}>
+          <div className="flex items-center gap-4 react-video-player-controller-inner">
             {/* Play/Pause */}
             <button
               onClick={(e) => {
@@ -673,7 +673,7 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
                   )}
                 </button>
                 {/* Horizontal volume slider */}
-                <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                <div className="flex react-video-player-volumn-controller items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                   <input
                     type="range"
                     min="0"

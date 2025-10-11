@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.1] - 2025-01-11
+
+### Changed
+- Updated volume slider track height to 4px for better visibility and control
+- Enhanced settings accordion with smooth expand/collapse transitions (300ms duration)
+- Improved quality selector with proper dropdown animation
+
+### Fixed
+- Volume slider track height now properly enforced with !important flag
+- Settings menu dropdowns now have smooth accordion-style animations
+- Theme dropdown properly closes with smooth transition
+
+### Improved
+- Demo now includes multiple actual quality sources (1080p HLS, 720p, 480p, 360p)
+- Playlist items now demonstrate quality options with different video sources
+- Better visual feedback with animated chevron icons in settings dropdowns
+
 ## [1.0.0] - 2025-01-11
 
 ### Added

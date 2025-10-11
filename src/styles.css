@@ -79,10 +79,12 @@ input[type="range"] {
 
 /* Webkit (Chrome, Safari, Edge) */
 input[type="range"]::-webkit-slider-track {
-  height: 4px;
+  height: 4px !important;
   border-radius: 2px;
 }
-
+.react-video-player-volumn-controller input[type="range"]{
+  height: 4px;
+}
 input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
@@ -100,7 +102,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
 
 /* Firefox */
 input[type="range"]::-moz-range-track {
-  height: 4px;
+  height: 4px !important;
   border-radius: 2px;
 }
 

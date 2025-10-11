@@ -9,6 +9,8 @@ export interface VideoSource {
   type?: string;
   /** Quality label for the video (e.g., '720p', '1080p', '4K') */
   quality?: string;
+  /** Poster/banner image URL for this video source */
+  poster?: string;
 }
 
 /**

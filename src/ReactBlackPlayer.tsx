@@ -106,6 +106,9 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
   const [isPictureInPicture, setIsPictureInPicture] = useState(false);
   const [nextVideoPoster, setNextVideoPoster] = useState<string | undefined>(undefined);
   
+  // Get current poster from video source or fallback to poster prop
+  const currentPoster = currentSources[0]?.poster || poster;
+  
   // Settings dropdown states
   const [speedDropdownOpen, setSpeedDropdownOpen] = useState(true);
   const [subtitleDropdownOpen, setSubtitleDropdownOpen] = useState(false);
@@ -787,9 +790,10 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
         const isLastVideo = currentPlaylistIndex === playlist.length - 1;
         
         if (!isLastVideo) {
-          // Get next video's thumbnail/poster
+          // Get next video's poster from source or fallback to thumbnail
           const nextItem = playlist[currentPlaylistIndex + 1];
-          setNextVideoPoster(nextItem?.thumbnail);
+          const nextPoster = nextItem?.sources[0]?.poster || nextItem?.thumbnail;
+          setNextVideoPoster(nextPoster);
         }
         
         // Show buffering spinner during transition
@@ -1028,7 +1032,7 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
         }}
         controlsList={protectSource ? 'nodownload nofullscreen noremoteplayback' : undefined}
         disablePictureInPicture={protectSource}
-        poster={poster}
+        poster={currentPoster}
         autoPlay={autoPlay}
         muted={muted}
         loop={loop}
@@ -1052,11 +1056,11 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
       </video>
 
       {/* Poster overlay when video truly ends (not auto-playing next) */}
-      {isVideoEnded && showCenterPlay && poster && (
+      {isVideoEnded && showCenterPlay && currentPoster && (
         <div
           className="absolute inset-0 z-5 pointer-events-none"
           style={{
-            backgroundImage: `url(${poster})`,
+            backgroundImage: `url(${currentPoster})`,
             backgroundSize: 'contain',
             backgroundPosition: 'center',
             backgroundRepeat: 'no-repeat',

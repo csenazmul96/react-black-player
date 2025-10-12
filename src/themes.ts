@@ -3,20 +3,12 @@ import type { Theme } from './types';
 // Default predefined themes
 export const defaultThemes: Theme[] = [
   {
-    name: 'Black',
-    primaryColor: '#000000',
-    secondaryColor: '#ffffff',
-    backgroundColor: '#000000',
-    textColor: '#ffffff',
-    accentColor: '#ffffff',
-  },
-  {
-    name: 'White',
-    primaryColor: '#ffffff',
-    secondaryColor: '#000000',
-    backgroundColor: '#ffffff',
-    textColor: '#000000',
-    accentColor: '#000000',
+    name: 'Black-White',
+    primaryColor: '#000000',      // Black background
+    secondaryColor: '#ffffff',    // White accents
+    backgroundColor: '#000000',   // Black background
+    textColor: '#ffffff',         // White text
+    accentColor: '#ffffff',       // White accents
   },
   {
     name: 'Dark',
@@ -36,19 +28,11 @@ export const defaultThemes: Theme[] = [
   },
   {
     name: 'Blue',
-    primaryColor: '#1e293b',
-    secondaryColor: '#3b82f6',
-    backgroundColor: '#0f172a',
+    primaryColor: '#256ef4',
+    secondaryColor: '#346fb2',
+    backgroundColor: '#1a1a2e',
     textColor: '#e2e8f0',
-    accentColor: '#60a5fa',
-  },
-  {
-    name: 'Green',
-    primaryColor: '#14532d',
-    secondaryColor: '#16a34a',
-    backgroundColor: '#052e16',
-    textColor: '#dcfce7',
-    accentColor: '#22c55e',
+    accentColor: '#4d8fff',
   },
   {
     name: 'Purple',
@@ -57,14 +41,6 @@ export const defaultThemes: Theme[] = [
     backgroundColor: '#2e1065',
     textColor: '#e9d5ff',
     accentColor: '#c084fc',
-  },
-  {
-    name: 'Orange',
-    primaryColor: '#9a3412',
-    secondaryColor: '#ea580c',
-    backgroundColor: '#431407',
-    textColor: '#fed7aa',
-    accentColor: '#fb923c',
   },
 ];
 

@@ -45,6 +45,10 @@ export interface ThemeConfig {
   customThemes?: Theme[];
   /** Name of the default theme to use on load */
   defaultTheme?: string;
+  /** Default primary color for custom theme (overrides built-in themes if provided) */
+  defaultPrimaryColor?: string;
+  /** Default secondary color for custom theme (overrides built-in themes if provided) */
+  defaultSecondaryColor?: string;
 }
 
 /**

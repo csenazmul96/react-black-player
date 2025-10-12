@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import Hls from 'hls.js';
 import type { ReactBlackPlayerProps, Theme, SubtitleTrack } from './types';
-import { defaultThemes, getThemeByName, applyThemeToElement } from './themes';
+import { defaultThemes, getThemeByName, applyThemeToElement, isLightColor } from './themes';
 import './styles.css';
 
 export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
@@ -117,10 +117,26 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
   // Theme state
   const availableThemes = [...(themeConfig?.availableThemes || defaultThemes), ...(themeConfig?.customThemes || [])];
   const [currentTheme, setCurrentTheme] = useState<Theme>(() => {
-    if (themeConfig?.defaultTheme) {
-      return getThemeByName(availableThemes, themeConfig.defaultTheme) || availableThemes[0];
+    // Priority 1: If custom primary and secondary colors are provided, create a custom theme
+    if (themeConfig?.defaultPrimaryColor && themeConfig?.defaultSecondaryColor) {
+      const customDefaultTheme: Theme = {
+        name: 'Custom',
+        primaryColor: themeConfig.defaultPrimaryColor,
+        secondaryColor: themeConfig.defaultSecondaryColor,
+        backgroundColor: themeConfig.defaultPrimaryColor,
+        textColor: isLightColor(themeConfig.defaultPrimaryColor) ? '#1f2937' : '#ffffff',
+        accentColor: themeConfig.defaultSecondaryColor,
+      };
+      return customDefaultTheme;
     }
-    return availableThemes[0]; // Default to first theme (Dark)
+    
+    // Priority 2: If defaultTheme name is provided, use that theme
+    if (themeConfig?.defaultTheme) {
+      return getThemeByName(availableThemes, themeConfig.defaultTheme) || getThemeByName(availableThemes, 'Dark') || availableThemes[0];
+    }
+    
+    // Priority 3: Default to Dark theme
+    return getThemeByName(availableThemes, 'Dark') || availableThemes[0];
   });
 
   // Text labels with defaults
@@ -974,7 +990,6 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
     const baseStyle: React.CSSProperties = {
       width: typeof width === 'number' ? `${width}px` : width,
       backgroundColor: currentTheme.backgroundColor || currentTheme.primaryColor,
-      border: `1px solid ${currentTheme.primaryColor}`,
       color: currentTheme.textColor,
       ...(protectSource && {
         userSelect: 'none',
@@ -1150,7 +1165,7 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
           showControlsState ? 'opacity-100' : 'opacity-0'
         }`}
         style={{
-          background: `linear-gradient(to top, ${currentTheme.primaryColor}, ${currentTheme.primaryColor}CC, transparent)`
+          backgroundColor: `${currentTheme.primaryColor}E6` // Solid color with 90% opacity
         }}
       >
         {/* Progress Bar */}

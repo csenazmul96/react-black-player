@@ -195,9 +195,50 @@ import { ReactBlackPlayer } from 'react-black-player';
 
 ### Custom Theme
 
-```tsx
-import { ReactBlackPlayer, createCustomTheme } from 'react-black-player';
+#### Option 1: Use Default Custom Colors (Recommended for Simple Cases)
 
+The easiest way to customize the player's colors is to provide `defaultPrimaryColor` and `defaultSecondaryColor`. This will override all built-in themes:
+
+```tsx
+import { ReactBlackPlayer } from 'react-black-player';
+
+<ReactBlackPlayer
+  sources={[
+    {
+      src: '/videos/video.mp4',
+      type: 'video/mp4',
+    },
+  ]}
+  themeConfig={{
+    defaultPrimaryColor: '#256ef4',  // Your brand primary color
+    defaultSecondaryColor: '#346fb2', // Your brand secondary color
+  }}
+/>
+```
+
+#### Option 2: Use Built-in Themes
+
+If you don't provide custom colors, the player will use the Dark theme by default. You can specify a different built-in theme:
+
+```tsx
+<ReactBlackPlayer
+  sources={[
+    {
+      src: '/videos/video.mp4',
+      type: 'video/mp4',
+    },
+  ]}
+      themeConfig={{
+        defaultTheme: 'Blue', // Options: 'Black-White', 'Dark', 'Light', 'Blue', 'Purple'
+      }}
+/>
+```
+
+#### Option 3: Full Custom Theme with Theme Selector
+
+For advanced use cases, you can define custom themes and allow users to switch between them:
+
+```tsx
 const myTheme = {
   name: 'My Theme',
   primaryColor: '#1a1a2e',
@@ -221,6 +262,11 @@ const myTheme = {
   }}
 />
 ```
+
+**Theme Priority:**
+1. `defaultPrimaryColor` + `defaultSecondaryColor` (highest priority)
+2. `defaultTheme` by name
+3. 'Dark' theme (default fallback)
 
 ### With Event Handlers
 
@@ -396,14 +442,26 @@ interface Theme {
 }
 ```
 
+#### ThemeConfig
+
+```typescript
+interface ThemeConfig {
+  showThemeSelector?: boolean;         // Show theme selector in settings
+  availableThemes?: Theme[];           // List of available themes
+  customThemes?: Theme[];              // Custom themes to add
+  defaultTheme?: string;               // Name of default theme
+  defaultPrimaryColor?: string;        // Default primary color (overrides themes)
+  defaultSecondaryColor?: string;      // Default secondary color (overrides themes)
+}
+```
+
 ## 🎨 Built-in Themes
 
-- **Dark** (default) - Modern dark theme
-- **Light** - Clean light theme
-- **Ocean** - Blue ocean theme
-- **Sunset** - Warm sunset theme
-- **Forest** - Green forest theme
-- **Royal** - Purple royal theme
+- **Black-White** - Pure black background with white controls and text
+- **Dark** (default) - Modern dark theme with crimson accents
+- **Light** - Clean light theme with blue accents
+- **Blue** - Dark blue theme (`#256ef4` / `#346fb2`)
+- **Purple** - Deep purple royal theme
 
 ## 🛠️ Development
 

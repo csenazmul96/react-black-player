@@ -16,9 +16,32 @@ import {
   PictureInPicture,
 } from 'lucide-react';
 import Hls from 'hls.js';
-import type { ReactBlackPlayerProps, Theme, SubtitleTrack } from './types';
+import type { ReactBlackPlayerProps, Theme, SubtitleTrack, VideoSource } from './types';
 import { defaultThemes, getThemeByName, applyThemeToElement, isLightColor } from './themes';
 import './styles.css';
+
+// Helper component to fetch video duration
+const VideoDurationFetcher: React.FC<{ source: VideoSource; onDuration: (duration: number) => void }> = ({ source, onDuration }) => {
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const handleLoadedMetadata = () => {
+      onDuration(video.duration);
+    };
+
+    video.addEventListener('loadedmetadata', handleLoadedMetadata);
+    video.src = source.src;
+
+    return () => {
+      video.removeEventListener('loadedmetadata', handleLoadedMetadata);
+    };
+  }, [source, onDuration]);
+
+  return <video ref={videoRef} style={{ display: 'none' }} preload="metadata" />;
+};
 
 export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
   sources,
@@ -104,6 +127,7 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
   const [isVideoEnded, setIsVideoEnded] = useState(false);
   const [isPictureInPicture, setIsPictureInPicture] = useState(false);
   const [nextVideoPoster, setNextVideoPoster] = useState<string | undefined>(undefined);
+  const [playlistDurations, setPlaylistDurations] = useState<{ [key: string]: number }>({});
   
   // Get current poster from video source only (no fallback)
   const currentPoster = currentSources[0]?.poster;
@@ -1165,7 +1189,7 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
           showControlsState ? 'opacity-100' : 'opacity-0'
         }`}
         style={{
-          backgroundColor: `${currentTheme.primaryColor}E6` // Solid color with 90% opacity
+          background: `linear-gradient(to top, ${currentTheme.primaryColor}A6, ${currentTheme.primaryColor}33)`
         }}
       >
         {/* Progress Bar */}
@@ -1668,7 +1692,7 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
             showPlaylistSidebar ? 'translate-x-0' : 'translate-x-full'
           }`}
           style={{
-            backgroundColor: `${currentTheme.primaryColor}E6`
+            backgroundColor: `${currentTheme.primaryColor}A6`
           }}
           onClick={(e) => e.stopPropagation()}
         >
@@ -1687,7 +1711,7 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
                   className="px-4 py-3 cursor-pointer transition-colors border-b"
                   style={{
                     borderColor: currentTheme.primaryColor,
-                    backgroundColor: index === currentPlaylistIndex ? `${currentTheme.accentColor || currentTheme.secondaryColor}4D` : 'transparent'
+                    backgroundColor: 'transparent'
                   }}
                   onMouseEnter={(e) => {
                     if (index !== currentPlaylistIndex) {
@@ -1695,7 +1719,7 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
                     }
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = index === currentPlaylistIndex ? `${currentTheme.accentColor || currentTheme.secondaryColor}4D` : 'transparent';
+                    e.currentTarget.style.backgroundColor = 'transparent';
                   }}
                 >
                   <div className="flex gap-3">
@@ -1707,6 +1731,16 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
                       />
                     )}
                     <div className="flex-1 min-w-0">
+                      {item.sources && item.sources.length > 0 && (
+                        <VideoDurationFetcher
+                          source={item.sources[0]}
+                          onDuration={(duration) => {
+                            if (!playlistDurations[item.id]) {
+                              setPlaylistDurations(prev => ({ ...prev, [item.id]: duration }));
+                            }
+                          }}
+                        />
+                      )}
                       <div
                         className="text-sm truncate"
                         style={{
@@ -1716,7 +1750,7 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
                         {item.title}
                       </div>
                       <div className="text-xs mt-1" style={{ color: `${currentTheme.textColor}80` }}>
-                        {index + 1} / {playlist.length}
+                        {playlistDurations[item.id] ? formatTime(playlistDurations[item.id]) : '...'}
                       </div>
                     </div>
                   </div>

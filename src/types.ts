@@ -66,6 +66,8 @@ export interface PlaylistItem {
   sources: VideoSource[];
   /** Array of subtitle tracks for this video */
   subtitles?: SubtitleTrack[];
+  /** Duration of the video, can be a string (e.g., "3:45") or number in seconds */
+  duration?: string | number;
 }
 
 /**

@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import Hls from 'hls.js';
 import type { ReactBlackPlayerProps, Theme, SubtitleTrack, VideoSource } from './types';
-import { defaultThemes, getThemeByName, applyThemeToElement, isLightColor } from './themes';
+import { defaultThemes, getThemeByName, applyThemeToElement } from './themes';
 import './styles.css';
 
 // Helper component to fetch video duration
@@ -47,15 +47,7 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
   sources,
   className = '',
   subtitles = [],
-  showTime = true,
-  showVolume = true,
-  showSettings = true,
-  showQuality = true,
-  showSubtitles = true,
-  showPlaylist = true,
-  showNextPrev = true,
-  showPictureInPicture = false,
-  showControls: showControlsProp = true,
+  controls = {},
   protectSource = false,
   playlist = [],
   autoPlayNext,
@@ -86,6 +78,17 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
   onLoadedMetadata,
   onCanPlay,
 }) => {
+  const {
+    time: showTime = true,
+    volume: showVolume = true,
+    settings: showSettings = true,
+    quality: showQuality = true,
+    subtitles: showSubtitles = true,
+    playlist: showPlaylist = true,
+    nextPrev: showNextPrev = true,
+    pictureInPicture: showPictureInPicture = false,
+    all: showControlsProp = true,
+  } = controls;
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const hlsRef = useRef<Hls | null>(null);
@@ -139,28 +142,10 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
   const [themeDropdownOpen, setThemeDropdownOpen] = useState(false);
 
   // Theme state
-  const availableThemes = [...(themeConfig?.availableThemes || defaultThemes), ...(themeConfig?.customThemes || [])];
+  const availableThemes = themeConfig?.themes || defaultThemes;
   const [currentTheme, setCurrentTheme] = useState<Theme>(() => {
-    // Priority 1: If custom primary and secondary colors are provided, create a custom theme
-    if (themeConfig?.defaultPrimaryColor && themeConfig?.defaultSecondaryColor) {
-      const customDefaultTheme: Theme = {
-        name: 'Custom',
-        primaryColor: themeConfig.defaultPrimaryColor,
-        secondaryColor: themeConfig.defaultSecondaryColor,
-        backgroundColor: themeConfig.defaultPrimaryColor,
-        textColor: isLightColor(themeConfig.defaultPrimaryColor) ? '#1f2937' : '#ffffff',
-        accentColor: themeConfig.defaultSecondaryColor,
-      };
-      return customDefaultTheme;
-    }
-    
-    // Priority 2: If defaultTheme name is provided, use that theme
-    if (themeConfig?.defaultTheme) {
-      return getThemeByName(availableThemes, themeConfig.defaultTheme) || getThemeByName(availableThemes, 'Dark') || availableThemes[0];
-    }
-    
-    // Priority 3: Default to Dark theme
-    return getThemeByName(availableThemes, 'Dark') || availableThemes[0];
+    const defaultThemeName = themeConfig?.defaultTheme || 'Dark';
+    return getThemeByName(availableThemes, defaultThemeName) || availableThemes[0];
   });
 
   // Text labels with defaults

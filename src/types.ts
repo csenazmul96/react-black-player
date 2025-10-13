@@ -37,18 +37,12 @@ export interface Theme {
  * @interface ThemeConfig
  */
 export interface ThemeConfig {
-  /** Whether to show theme selector in settings menu */
+  /** Whether to show theme selector in settings menu. Defaults to true. */
   showThemeSelector?: boolean;
-  /** List of available themes to choose from */
-  availableThemes?: Theme[];
-  /** Custom themes to add to the theme selector */
-  customThemes?: Theme[];
-  /** Name of the default theme to use on load */
+  /** Array of themes to be available in the player. */
+  themes?: Theme[];
+  /** Name of the default theme to use on load. Must match the name of a theme in the `themes` array. */
   defaultTheme?: string;
-  /** Default primary color for custom theme (overrides built-in themes if provided) */
-  defaultPrimaryColor?: string;
-  /** Default secondary color for custom theme (overrides built-in themes if provided) */
-  defaultSecondaryColor?: string;
 }
 
 /**
@@ -66,8 +60,6 @@ export interface PlaylistItem {
   sources: VideoSource[];
   /** Array of subtitle tracks for this video */
   subtitles?: SubtitleTrack[];
-  /** Duration of the video, can be a string (e.g., "3:45") or number in seconds */
-  duration?: string | number;
 }
 
 /**
@@ -79,7 +71,7 @@ export interface SubtitleTrack {
   src: string;
   /** Display label for the subtitle track */
   label: string;
-  /** Language code (e.g., 'en', 'es', 'fr') */
+  /** Language code (e.g., 'en', 'es', 'fr'), must be a valid BCP 47 language tag */
   srclang: string;
   /** Whether this subtitle should be enabled by default */
   default?: boolean;
@@ -103,30 +95,39 @@ export interface TextLabels {
 }
 
 /**
+ * Configuration for the visibility of player controls
+ * @interface ControlsVisibility
+ */
+export interface ControlsVisibility {
+  /** Show/hide current time and duration display. Defaults to true. */
+  time?: boolean;
+  /** Show/hide volume control. Defaults to true. */
+  volume?: boolean;
+  /** Show/hide settings menu (speed, quality, subtitles, theme). Defaults to true. */
+  settings?: boolean;
+  /** Show/hide quality selector in settings. Defaults to true. */
+  quality?: boolean;
+  /** Show/hide subtitle selector in settings. Defaults to true. */
+  subtitles?: boolean;
+  /** Show/hide playlist sidebar. Defaults to true. */
+  playlist?: boolean;
+  /** Show/hide previous/next buttons when playlist is available. Defaults to true. */
+  nextPrev?: boolean;
+  /** Show/hide Picture-in-Picture button. Defaults to false. */
+  pictureInPicture?: boolean;
+  /** Show/hide all player controls. Defaults to true. */
+  all?: boolean;
+}
+
+
+/**
  * Configuration options for the React Black Player
  * @interface ReactBlackPlayerConfig
  */
 export interface ReactBlackPlayerConfig {
-  // Display options
-  /** Show/hide current time and duration display */
-  showTime?: boolean;
-  /** Show/hide volume control */
-  showVolume?: boolean;
-  /** Show/hide settings menu (speed, quality, subtitles, theme) */
-  showSettings?: boolean;
-  /** Show/hide quality selector in settings */
-  showQuality?: boolean;
-  /** Show/hide subtitle selector in settings */
-  showSubtitles?: boolean;
-  /** Show/hide playlist sidebar */
-  showPlaylist?: boolean;
-  /** Show/hide previous/next buttons when playlist is available */
-  showNextPrev?: boolean;
-  /** Show/hide Picture-in-Picture button */
-  showPictureInPicture?: boolean;
-  /** Show/hide all player controls */
-  showControls?: boolean;
-  
+  /** Configuration for the visibility of player controls */
+  controls?: ControlsVisibility;
+
   // Security
   /** Protect video source from being easily copied (disables right-click, prevents URL inspection) */
   protectSource?: boolean;

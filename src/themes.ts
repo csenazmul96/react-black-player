@@ -81,6 +81,8 @@ export const generateThemeVariables = (theme: Theme): { [key: string]: string } 
     '--player-bg': theme.backgroundColor || theme.primaryColor,
     '--player-text': theme.textColor || (isLightColor(theme.primaryColor) ? '#1f2937' : '#ffffff'),
     '--player-accent': theme.accentColor || theme.secondaryColor,
+    '--player-accent-hover-bg': `${theme.accentColor || theme.secondaryColor}20`,
+    '--player-accent-active-bg': `${theme.accentColor || theme.secondaryColor}33`,
   };
 };
 

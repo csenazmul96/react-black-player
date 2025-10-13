@@ -118,7 +118,6 @@ const App: React.FC = () => {
     {
       id: '5',
       title: 'For Bigger Fun',
-      thumbnail: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/images/ForBiggerFun.jpg',
       sources: [
         {
           src: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4',
@@ -140,6 +139,16 @@ const App: React.FC = () => {
         },
       ],
       subtitles: [],
+    },
+    {
+      id: '7',
+      title: 'SoundHelix Song 1',
+      sources: [
+        {
+          src: '/sample-audio.mp3',
+          type: 'audio/mpeg',
+        },
+      ],
     },
   ];
 

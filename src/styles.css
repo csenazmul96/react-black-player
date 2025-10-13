@@ -2,22 +2,24 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Custom scrollbar for playlist */
+/* Custom scrollbar for playlist - Themed */
 .playlist-scrollbar::-webkit-scrollbar {
-  width: 4px;
+  width: 8px;
 }
 
 .playlist-scrollbar::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.1);
+  background: transparent;
 }
 
 .playlist-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.3);
-  border-radius: 2px;
+  background-color: var(--player-accent, #888);
+  border-radius: 4px;
+  border: 2px solid transparent;
+  background-clip: content-box;
 }
 
 .playlist-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.5);
+  background-color: var(--player-secondary, #555);
 }
 
 /* Custom scrollbar for settings menu */
@@ -235,4 +237,17 @@ video::-webkit-media-text-track-display {
 .react-black-player video.buffering {
   filter: blur(8px);
   -webkit-filter: blur(8px);
+}
+
+.playlist-item {
+  background-color: transparent;
+  transition: background-color 0.3s ease-in-out;
+}
+
+.playlist-item.active {
+  background-color: var(--player-accent-active-bg);
+}
+
+.playlist-item:not(.active):hover {
+  background-color: var(--player-accent-hover-bg);
 }

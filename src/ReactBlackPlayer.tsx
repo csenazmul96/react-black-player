@@ -14,6 +14,9 @@ import {
   Palette,
   RotateCcw,
   PictureInPicture,
+  Image as ImageIcon,
+  Music,
+  ListMusic,
 } from 'lucide-react';
 import Hls from 'hls.js';
 import type { ReactBlackPlayerProps, Theme, SubtitleTrack, VideoSource } from './types';
@@ -96,6 +99,7 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
   const progressBarRef = useRef<HTMLDivElement>(null);
   const isDraggingProgress = useRef<boolean>(false);
   const isSeeking = useRef<boolean>(false);
+  const isQualitySwitching = useRef<boolean>(false);
   
   // Use refs for props that need to be accessed in event handlers
   // Initialize them properly and keep them updated
@@ -120,8 +124,18 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
   const [showPlaylistSidebar, setShowPlaylistSidebar] = useState(false);
   const [currentPlaylistIndex, setCurrentPlaylistIndex] = useState(0);
-  const [currentSources, setCurrentSources] = useState(sources);
-  const [currentSubtitles, setCurrentSubtitles] = useState(subtitles);
+  const [currentSources, setCurrentSources] = useState(() => {
+    if (playlist && playlist.length > 0) {
+      return playlist[0].sources;
+    }
+    return sources;
+  });
+  const [currentSubtitles, setCurrentSubtitles] = useState(() => {
+    if (playlist && playlist.length > 0) {
+      return playlist[0].subtitles || [];
+    }
+    return subtitles;
+  });
   const [activeSubtitle, setActiveSubtitle] = useState<number>(-1);
   const [preferredSubtitleLanguage, setPreferredSubtitleLanguage] = useState<string | null>(null);
   const [showCenterPlay, setShowCenterPlay] = useState(!autoPlay);
@@ -131,6 +145,7 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
   const [isPictureInPicture, setIsPictureInPicture] = useState(false);
   const [nextVideoPoster, setNextVideoPoster] = useState<string | undefined>(undefined);
   const [playlistDurations, setPlaylistDurations] = useState<{ [key: string]: number }>({});
+  const [isAudio, setIsAudio] = useState(false);
   
   // Get current poster from video source only (no fallback)
   const currentPoster = currentSources[0]?.poster;
@@ -162,42 +177,54 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
     const video = videoRef.current;
     if (!video) return;
 
-    const mainSource = currentSources[0];
-    if (!mainSource) return;
+    // Ensure any existing HLS instance is destroyed before loading a new source
+    if (hlsRef.current) {
+      hlsRef.current.destroy();
+      hlsRef.current = null;
+    }
 
-    // Reset state when source changes
-    setIsPlaying(false);
-    setShowCenterPlay(!autoPlay);
-    setCurrentTime(0);
-    setDuration(0);
-    setIsVideoEnded(false);
+    const mainSource = currentSources[0];
+
+    // Reset state when source changes, but not for quality switches
+    if (!isQualitySwitching.current) {
+      setIsPlaying(false);
+      setShowCenterPlay(!autoPlay);
+      setCurrentTime(0);
+      setDuration(0);
+      setIsVideoEnded(false);
+    }
+
+    if (!mainSource) {
+      video.src = '';
+      return;
+    }
+
+    // Check if the source is an audio file
+    const isAudioSource = mainSource.type?.startsWith('audio/');
+    setIsAudio(!!isAudioSource);
 
     // Check if source is m3u8
     const isHLS = mainSource.src.includes('.m3u8') || mainSource.type === 'application/x-mpegURL';
 
-    if (isHLS) {
-      if (Hls.isSupported()) {
-        const hls = new Hls();
-        hlsRef.current = hls;
-        hls.loadSource(mainSource.src);
-        hls.attachMedia(video);
-        
-        hls.on(Hls.Events.ERROR, (_event, data) => {
-          if (data.fatal) {
-            onError?.(data);
-          }
-        });
-
-        return () => {
-          hls.destroy();
-        };
-      } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-        // Native HLS support (Safari)
-        video.src = mainSource.src;
-      }
+    if (isHLS && Hls.isSupported()) {
+      const hls = new Hls();
+      hlsRef.current = hls;
+      hls.loadSource(mainSource.src);
+      hls.attachMedia(video);
+      
+      hls.on(Hls.Events.ERROR, (_event, data) => {
+        if (data.fatal) {
+          onError?.(data);
+        }
+      });
     } else {
+      // For non-HLS sources (e.g., MP4, MP3) or when HLS is not supported
       video.src = mainSource.src;
+      video.load(); // Explicitly load the new source
     }
+
+    // The cleanup function will be handled at the start of the effect
+    // to ensure it runs before the new source is loaded.
   }, [currentSources, onError, autoPlay]);
 
   // Apply theme to container
@@ -959,6 +986,9 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
       if (qualitySource && videoRef.current) {
         const currentTime = videoRef.current.currentTime;
         const wasPlaying = !videoRef.current.paused;
+
+        // Flag that we are switching quality
+        isQualitySwitching.current = true;
         
         // Update source but keep original sources list for quality selector
         setCurrentSources([qualitySource]);
@@ -972,6 +1002,11 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
             }
             
             videoRef.current.removeEventListener('loadedmetadata', restoreState);
+
+            // Reset the flag shortly after restoring state
+            setTimeout(() => {
+              isQualitySwitching.current = false;
+            }, 100);
           }
         };
         
@@ -1008,6 +1043,16 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
       }),
     };
 
+    // Handle audio player styling
+    if (isAudio) {
+      return {
+        ...baseStyle,
+        height: 'auto',
+        minHeight: '120px',
+        aspectRatio: undefined,
+      };
+    }
+
     // If video aspect ratio is available
     if (videoAspectRatio !== null) {
       // Portrait/Vertical video (aspect ratio < 1, e.g., 9:16 = 0.5625)
@@ -1040,12 +1085,12 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
       onMouseLeave={handleMouseLeave}
       onClick={handleContainerClick}
     >
-      {/* Video Element */}
+      {/* Single persistent video element for both audio and video */}
       <video
         ref={videoRef}
-        className={`w-full h-full ${isBuffering ? 'buffering' : ''}`}
+        className={`w-full h-full ${isBuffering ? 'buffering' : ''} ${isAudio ? 'absolute top-0 left-0 w-0 h-0 opacity-0 pointer-events-none' : ''}`}
         style={{
-          objectFit: 'contain', // Always contain to show full video with black bars
+          objectFit: 'contain',
           backgroundColor: '#000000',
           ...(protectSource && {
             pointerEvents: 'auto',
@@ -1078,67 +1123,77 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
         ))}
       </video>
 
-      {/* Poster overlay when video truly ends (not auto-playing next) */}
-      {isVideoEnded && showCenterPlay && currentPoster && (
-        <div
-          className="absolute inset-0 z-5 pointer-events-none"
-          style={{
-            backgroundImage: `url(${currentPoster})`,
-            backgroundSize: 'contain',
-            backgroundPosition: 'center',
-            backgroundRepeat: 'no-repeat',
-            backgroundColor: '#000000',
-          }}
-        />
-      )}
-
-      {/* Next video poster overlay during transition */}
-      {isBuffering && nextVideoPoster && (
-        <div
-          className="absolute inset-0 z-5 pointer-events-none"
-          style={{
-            backgroundImage: `url(${nextVideoPoster})`,
-            backgroundSize: 'contain',
-            backgroundPosition: 'center',
-            backgroundRepeat: 'no-repeat',
-            backgroundColor: '#000000',
-          }}
-        />
-      )}
-
-      {/* Center Play Button */}
-      {showCenterPlay && !isBuffering && (
-        <div
-          className="absolute inset-0 flex items-center justify-center cursor-pointer z-10"
-          onClick={(e) => {
-            e.stopPropagation();
-            togglePlay();
-          }}
-        >
-          <div 
-            className="w-20 h-20 rounded-full flex items-center justify-center hover:bg-opacity-90 transition-all duration-300 hover:scale-110 relative"
-            style={{ backgroundColor: `${currentTheme.primaryColor}B3` }}
-          >
-            <div 
-              className="absolute inset-0 rounded-full border-2 opacity-20"
-              style={{ borderColor: currentTheme.textColor }}
-            ></div>
-            {isVideoEnded ? (
-              <RotateCcw 
-                className="w-10 h-10" 
-                strokeWidth={1.5}
-                style={{ color: currentTheme.textColor }}
-              />
-            ) : (
-              <Play 
-                className="w-10 h-10 ml-1" 
-                strokeWidth={1} 
-                fill={currentTheme.primaryColor}
-                style={{ color: currentTheme.textColor }}
-              />
-            )}
-          </div>
+      {/* Conditional UI Overlays */}
+      {isAudio ? (
+        <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-4 pointer-events-none">
+          <Music className="w-16 h-16 mb-4" style={{ color: `${currentTheme.textColor}80` }} strokeWidth={1} />
+          <span className="text-lg font-semibold truncate max-w-full" style={{ color: currentTheme.textColor }}>
+            {playlist[currentPlaylistIndex]?.title || 'Audio Track'}
+          </span>
         </div>
+      ) : (
+        <>
+          {/* Video-specific overlays */}
+          {isVideoEnded && showCenterPlay && currentPoster && (
+            <div
+              className="absolute inset-0 z-5 pointer-events-none"
+              style={{
+                backgroundImage: `url(${currentPoster})`,
+                backgroundSize: 'contain',
+                backgroundPosition: 'center',
+                backgroundRepeat: 'no-repeat',
+                backgroundColor: '#000000',
+              }}
+            />
+          )}
+
+          {isBuffering && nextVideoPoster && (
+            <div
+              className="absolute inset-0 z-5 pointer-events-none"
+              style={{
+                backgroundImage: `url(${nextVideoPoster})`,
+                backgroundSize: 'contain',
+                backgroundPosition: 'center',
+                backgroundRepeat: 'no-repeat',
+                backgroundColor: '#000000',
+              }}
+            />
+          )}
+
+          {showCenterPlay && !isBuffering && (
+            <div
+              className="absolute inset-0 flex items-center justify-center cursor-pointer z-10"
+              onClick={(e) => {
+                e.stopPropagation();
+                togglePlay();
+              }}
+            >
+              <div 
+                className="w-20 h-20 rounded-full flex items-center justify-center hover:bg-opacity-90 transition-all duration-300 hover:scale-110 relative"
+                style={{ backgroundColor: `${currentTheme.primaryColor}B3` }}
+              >
+                <div 
+                  className="absolute inset-0 rounded-full border-2 opacity-20"
+                  style={{ borderColor: currentTheme.textColor }}
+                ></div>
+                {isVideoEnded ? (
+                  <RotateCcw 
+                    className="w-10 h-10" 
+                    strokeWidth={1.5}
+                    style={{ color: currentTheme.textColor }}
+                  />
+                ) : (
+                  <Play 
+                    className="w-10 h-10 ml-1" 
+                    strokeWidth={1} 
+                    fill={currentTheme.primaryColor}
+                    style={{ color: currentTheme.textColor }}
+                  />
+                )}
+              </div>
+            </div>
+          )}
+        </>
       )}
 
       {/* Buffering Spinner */}
@@ -1337,7 +1392,7 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
             )}
 
             {/* Picture-in-Picture */}
-            {showPictureInPicture && (
+            {showPictureInPicture && !isAudio && (
               <button
                 onClick={(e) => {
                   e.stopPropagation();
@@ -1362,7 +1417,7 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
             )}
 
             {/* Settings */}
-            {showSettings && (
+            {showSettings && !isAudio && (
               <div className="relative">
                 <button
                   onClick={(e) => {
@@ -1610,140 +1665,250 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = ({
               </div>
             )}
 
+            {/* Playlist Toggle */}
+            {showPlaylist && playlist.length > 0 && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowPlaylistSidebar(!showPlaylistSidebar);
+                }}
+                className="transition-colors"
+                style={{ color: currentTheme.textColor }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = currentTheme.accentColor || currentTheme.secondaryColor;
+                }}
+                onMouseLeave={(e) => {
+                    if (currentTheme.textColor != null) {
+                        e.currentTarget.style.color = currentTheme.textColor;
+                    }
+                }}
+              >
+                <ListMusic className="w-5 h-5" strokeWidth={1} />
+              </button>
+            )}
+
             {/* Fullscreen */}
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                toggleFullscreen();
-              }}
-              className="transition-colors"
-              style={{ color: currentTheme.textColor }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.color = currentTheme.accentColor || currentTheme.secondaryColor;
-              }}
-              onMouseLeave={(e) => {
-                  if (currentTheme.textColor != null) {
-                      e.currentTarget.style.color = currentTheme.textColor;
-                  }
-              }}
-            >
-              {isFullscreen ? (
-                <Minimize className="w-5 h-5" strokeWidth={1} />
-              ) : (
-                <Maximize className="w-5 h-5" strokeWidth={1} />
-              )}
-            </button>
+            {!isAudio && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleFullscreen();
+                }}
+                className="transition-colors"
+                style={{ color: currentTheme.textColor }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = currentTheme.accentColor || currentTheme.secondaryColor;
+                }}
+                onMouseLeave={(e) => {
+                    if (currentTheme.textColor != null) {
+                        e.currentTarget.style.color = currentTheme.textColor;
+                    }
+                }}
+              >
+                {isFullscreen ? (
+                  <Minimize className="w-5 h-5" strokeWidth={1} />
+                ) : (
+                  <Maximize className="w-5 h-5" strokeWidth={1} />
+                )}
+              </button>
+            )}
           </div>
         </div>
       </div>
       )}
 
-      {/* Playlist Sidebar Trigger */}
-      {showPlaylist && playlist.length > 0 && (
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            setShowPlaylistSidebar(!showPlaylistSidebar);
-          }}
-          className={`absolute top-1/2 -translate-y-1/2 rounded-full p-2 transition-all duration-300 z-20 ${
-            showControlsState ? 'opacity-100' : 'opacity-0'
-          }`}
-          style={{
-            right: showPlaylistSidebar ? '320px' : '16px',
-            transition: 'right 0.3s ease, opacity 0.3s ease',
-            backgroundColor: `${currentTheme.primaryColor}80`,
-            color: currentTheme.textColor,
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = `${currentTheme.primaryColor}CC`;
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = `${currentTheme.primaryColor}80`;
-          }}
-        >
-          <ChevronLeft
-            className={`w-5 h-5 transition-transform duration-300 ${
-              showPlaylistSidebar ? 'rotate-180' : ''
-            }`}
-            strokeWidth={1}
-          />
-        </button>
-      )}
-
-      {/* Playlist Sidebar */}
-      {showPlaylist && playlist.length > 0 && (
-        <div
-          className={`absolute top-0 right-0 bottom-0 w-80 transform transition-all duration-300 z-30 ${
-            showPlaylistSidebar ? 'translate-x-0' : 'translate-x-full'
-          }`}
-          style={{
-            backgroundColor: `${currentTheme.primaryColor}A6`
-          }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div className="h-full flex flex-col">
-            <div className="px-4 py-3 border-b" style={{ borderColor: currentTheme.primaryColor }}>
-              <h3 className="font-semibold" style={{ color: currentTheme.textColor }}>{textLabels.playlist}</h3>
-            </div>
-            <div className="flex-1 overflow-y-auto playlist-scrollbar">
-              {playlist.map((item, index) => (
-                <div
-                  key={item.id}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    selectPlaylistItem(index);
-                  }}
-                  className="px-4 py-3 cursor-pointer transition-colors border-b"
-                  style={{
-                    borderColor: currentTheme.primaryColor,
-                    backgroundColor: 'transparent'
-                  }}
-                  onMouseEnter={(e) => {
-                    if (index !== currentPlaylistIndex) {
-                      e.currentTarget.style.backgroundColor = `${currentTheme.accentColor || currentTheme.secondaryColor}33`;
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = 'transparent';
-                  }}
+      {/* Playlist UI: Modal for Audio, Sidebar for Video */}
+      {showPlaylist && playlist.length > 0 && showPlaylistSidebar && (
+        isAudio ? (
+          // Modal for Audio
+          <div
+            className="absolute inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70 backdrop-blur-md"
+            onClick={() => setShowPlaylistSidebar(false)}
+          >
+            <div 
+              className="w-[90%] max-w-md rounded-lg shadow-xl flex flex-col overflow-hidden"
+              style={{
+                backgroundColor: currentTheme.backgroundColor || currentTheme.primaryColor,
+                maxHeight: '80vh',
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="px-4 py-3 border-b flex justify-between items-center" style={{ borderColor: `${currentTheme.textColor}20` }}>
+                <h3 className="font-semibold" style={{ color: currentTheme.textColor }}>{textLabels.playlist}</h3>
+                <button 
+                  onClick={(e) => e.stopPropagation()}
                 >
-                  <div className="flex gap-3">
-                    {item.thumbnail && (
-                      <img
-                        src={item.thumbnail}
-                        alt={item.title}
-                        className="w-20 h-12 object-cover rounded"
-                      />
-                    )}
-                    <div className="flex-1 min-w-0">
-                      {item.sources && item.sources.length > 0 && (
-                        <VideoDurationFetcher
-                          source={item.sources[0]}
-                          onDuration={(duration) => {
-                            if (!playlistDurations[item.id]) {
-                              setPlaylistDurations(prev => ({ ...prev, [item.id]: duration }));
-                            }
-                          }}
-                        />
-                      )}
-                      <div
-                        className="text-sm truncate"
-                        style={{
-                          color: index === currentPlaylistIndex ? (currentTheme.accentColor || currentTheme.secondaryColor) : currentTheme.textColor
-                        }}
-                      >
-                        {item.title}
-                      </div>
-                      <div className="text-xs mt-1" style={{ color: `${currentTheme.textColor}80` }}>
-                        {playlistDurations[item.id] ? formatTime(playlistDurations[item.id]) : '...'}
+                  <Minimize className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="flex-1 overflow-y-auto playlist-scrollbar">
+                {playlist.map((item, index) => {
+                  const isActive = index === currentPlaylistIndex;
+                  return (
+                    <div
+                      key={item.id}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        selectPlaylistItem(index);
+                      }}
+                      className={`p-4 cursor-pointer border-b playlist-item ${isActive ? 'active' : ''}`}
+                      style={{
+                        borderColor: `${currentTheme.textColor}20`,
+                      }}
+                    >
+                      <div className="flex gap-4 items-center">
+                        {item.thumbnail ? (
+                          <img
+                            src={item.thumbnail}
+                            alt={item.title}
+                            className="w-20 h-12 object-cover rounded-md flex-shrink-0"
+                          />
+                        ) : (
+                          <div 
+                            className="w-20 h-12 rounded-md flex items-center justify-center flex-shrink-0"
+                            style={{ backgroundColor: `${currentTheme.textColor}20` }}
+                          >
+                            <ImageIcon 
+                              className="w-6 h-6"
+                              style={{ color: `${currentTheme.textColor}80` }}
+                              strokeWidth={1}
+                            />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <div
+                            className="font-semibold truncate"
+                            style={{
+                              color: isActive ? (currentTheme.accentColor || currentTheme.secondaryColor) : currentTheme.textColor
+                            }}
+                          >
+                            {item.title}
+                          </div>
+                          <div className="text-xs mt-1 flex items-center gap-2" style={{ color: `${currentTheme.textColor}80` }}>
+                            <span>
+                              {playlistDurations[item.id] ? formatTime(playlistDurations[item.id]) : '...'}
+                            </span>
+                            {isActive && (
+                              <div className="flex items-center gap-1">
+                                <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: currentTheme.accentColor || currentTheme.secondaryColor }}></div>
+                                <span>Now Playing</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        {item.sources && item.sources.length > 0 && (
+                          <VideoDurationFetcher
+                            source={item.sources[0]}
+                            onDuration={(duration) => {
+                              if (!playlistDurations[item.id]) {
+                                setPlaylistDurations(prev => ({ ...prev, [item.id]: duration }));
+                              }
+                            }}
+                          />
+                        )}
                       </div>
                     </div>
-                  </div>
-                </div>
-              ))}
+                  )
+                })}
+              </div>
             </div>
           </div>
-        </div>
+        ) : (
+          // Sidebar for Video (Enhanced)
+          <div
+            className={`absolute top-0 right-0 bottom-0 w-80 transform transition-transform duration-300 z-30 backdrop-blur-md ${showPlaylistSidebar ? 'translate-x-0' : 'translate-x-full'}`}
+            style={{
+              backgroundColor: `${currentTheme.backgroundColor || currentTheme.primaryColor}E6`,
+              borderColor: `${currentTheme.textColor}20`,
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="h-full flex flex-col">
+              <div className="px-4 py-3 border-b flex justify-between items-center" style={{ borderColor: `${currentTheme.textColor}20` }}>
+                <h3 className="font-semibold" style={{ color: currentTheme.textColor }}>{textLabels.playlist}</h3>
+                <button 
+                  onClick={() => setShowPlaylistSidebar(false)} 
+                  className="p-1 rounded-full transition-colors" 
+                  style={{ color: currentTheme.textColor }}
+                  onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = `${currentTheme.accentColor || currentTheme.secondaryColor}33`; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+              </div>
+              <div className="flex-1 overflow-y-auto playlist-scrollbar">
+                {playlist.map((item, index) => {
+                  const isActive = index === currentPlaylistIndex;
+                  return (
+                    <div
+                      key={item.id}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        selectPlaylistItem(index);
+                      }}
+                      className={`p-4 cursor-pointer border-b playlist-item ${isActive ? 'active' : ''}`}
+                      style={{
+                        borderColor: `${currentTheme.textColor}20`,
+                      }}
+                    >
+                      <div className="flex gap-4 items-center">
+                        {item.thumbnail ? (
+                          <img
+                            src={item.thumbnail}
+                            alt={item.title}
+                            className="w-20 h-12 object-cover rounded-md flex-shrink-0"
+                          />
+                        ) : (
+                          <div 
+                            className="w-20 h-12 rounded-md flex items-center justify-center flex-shrink-0"
+                            style={{ backgroundColor: `${currentTheme.textColor}20` }}
+                          >
+                            <ImageIcon 
+                              className="w-6 h-6"
+                              style={{ color: `${currentTheme.textColor}80` }}
+                              strokeWidth={1}
+                            />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <div
+                            className="font-semibold truncate"
+                            style={{
+                              color: isActive ? (currentTheme.accentColor || currentTheme.secondaryColor) : currentTheme.textColor
+                            }}
+                          >
+                            {item.title}
+                          </div>
+                          <div className="text-xs mt-1 flex items-center gap-2" style={{ color: `${currentTheme.textColor}80` }}>
+                            <span>
+                              {playlistDurations[item.id] ? formatTime(playlistDurations[item.id]) : '...'}
+                            </span>
+                            {isActive && (
+                              <div className="flex items-center gap-1">
+                                <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: currentTheme.accentColor || currentTheme.secondaryColor }}></div>
+                                <span>Now Playing</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        {item.sources && item.sources.length > 0 && (
+                          <VideoDurationFetcher
+                            source={item.sources[0]}
+                            onDuration={(duration) => {
+                              if (!playlistDurations[item.id]) {
+                                setPlaylistDurations(prev => ({ ...prev, [item.id]: duration }));
+                              }
+                            }}
+                          />
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          </div>
+        )
       )}
     </div>
   );

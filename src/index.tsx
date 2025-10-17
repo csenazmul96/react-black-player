@@ -1,4 +1,4 @@
-export { ReactBlackPlayer } from './ReactBlackPlayer';
+export { ReactBlackPlayer } from './components/ReactBlackPlayer';
 export { defaultThemes, createCustomTheme } from './themes';
 export type {
   VideoSource,
@@ -11,3 +11,4 @@ export type {
   ThemeConfig,
   TextLabels,
 } from './types';
+export * from './hooks';

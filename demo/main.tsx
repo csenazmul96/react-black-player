@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import ReactDOM from 'react-dom/client';
-import { ReactBlackPlayer } from '../src/ReactBlackPlayer';
+import { ReactBlackPlayer } from '../src';
 import type { PlaylistItem, VideoSource, SubtitleTrack, Theme } from '../src/types';
 import { defaultThemes } from '../src/themes';
-import '../src/styles.css';
+import '../src/components/ReactBlackPlayer/styles.css';
 
 const App: React.FC = () => {
   const [currentTheme, setCurrentTheme] = useState<Theme>(defaultThemes[0]);
@@ -171,7 +171,7 @@ const App: React.FC = () => {
           showVolume={true}
           showSettings={true}
           showQuality={true}
-          showSubtitles={true}
+          showSubtitles={false}
           showPlaylist={true}
           showNextPrev={true}
           showPictureInPicture={true}

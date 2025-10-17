@@ -8,8 +8,6 @@ import { useHls } from '../../hooks/useHls';
 import { useKeyboardControls } from '../../hooks/useKeyboardControls';
 import { formatTime } from '../../utils/time';
 import { applyThemeToElement } from '../../utils/theme';
-import { RotateCcw, Play } from 'lucide-react';
-import { Spinner } from '../common/Spinner';
 import './styles.css';
 import BufferIcon from "../common/BufferIcon.tsx";
 import PlayButtonInMiddleOfPlayer from "../common/PlayButtonInMiddleOfPlayer.tsx";

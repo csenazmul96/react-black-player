@@ -22,6 +22,7 @@ interface PlayerControlsProps {
   togglePlay: () => void;
   showNextPrev: boolean;
   playlist: any[];
+  currentPlaylistIndex: number; // Add this line
   playPreviousVideo: () => void;
   playNextVideo: () => void;
   showVolume: boolean;
@@ -68,6 +69,7 @@ export const PlayerControls: React.FC<PlayerControlsProps> = ({
   togglePlay,
   showNextPrev,
   playlist,
+  currentPlaylistIndex, // Add this line
   playPreviousVideo,
   playNextVideo,
   showVolume,
@@ -139,10 +141,13 @@ export const PlayerControls: React.FC<PlayerControlsProps> = ({
                 e.stopPropagation();
                 playPreviousVideo();
               }}
-              className="transition-colors"
+              className="transition-colors disabled:opacity-50"
               style={{ color: currentTheme.textColor }}
+              disabled={currentPlaylistIndex === 0}
               onMouseEnter={(e) => {
-                e.currentTarget.style.color = currentTheme.accentColor || currentTheme.secondaryColor;
+                if (currentPlaylistIndex !== 0) {
+                  e.currentTarget.style.color = currentTheme.accentColor || currentTheme.secondaryColor;
+                }
               }}
               onMouseLeave={(e) => {
                   if (currentTheme.textColor != null) {
@@ -157,10 +162,13 @@ export const PlayerControls: React.FC<PlayerControlsProps> = ({
                 e.stopPropagation();
                 playNextVideo();
               }}
-              className="transition-colors"
+              className="transition-colors disabled:opacity-50"
               style={{ color: currentTheme.textColor }}
+              disabled={currentPlaylistIndex === playlist.length - 1}
               onMouseEnter={(e) => {
-                e.currentTarget.style.color = currentTheme.accentColor || currentTheme.secondaryColor;
+                if (currentPlaylistIndex !== playlist.length - 1) {
+                  e.currentTarget.style.color = currentTheme.accentColor || currentTheme.secondaryColor;
+                }
               }}
               onMouseLeave={(e) => {
                   if (currentTheme.textColor != null) {

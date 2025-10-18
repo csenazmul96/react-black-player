@@ -520,6 +520,7 @@ export const usePlayerState = (videoRef: React.RefObject<HTMLVideoElement>, cont
     const handleSeeked = () => {
       isSeeking.current = false;
       setCurrentTime(video.currentTime);
+      onSeeked?.();
     };
 
     const handleEnterPiP = () => {
@@ -561,7 +562,7 @@ export const usePlayerState = (videoRef: React.RefObject<HTMLVideoElement>, cont
       video.removeEventListener('enterpictureinpicture', handleEnterPiP);
       video.removeEventListener('leavepictureinpicture', handleLeavePiP);
     };
-  }, [onTimeUpdate, props.onLoadedMetadata, onEnded, props.onCanPlay, props.onSeeking, playlist, playNextVideo, videoRef]);
+  }, [onTimeUpdate, props.onLoadedMetadata, onEnded, props.onCanPlay, props.onSeeking, playlist, playNextVideo, videoRef, onSeeked]);
 
   return {
     isPlaying,

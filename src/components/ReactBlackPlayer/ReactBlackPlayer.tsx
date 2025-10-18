@@ -247,6 +247,7 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = (props) => {
             togglePlay={togglePlay}
             showNextPrev={showNextPrev}
             playlist={playlist || []}
+            currentPlaylistIndex={currentPlaylistIndex}
             playPreviousVideo={playPreviousVideo}
             playNextVideo={playNextVideo}
             showVolume={showVolume}

@@ -51,6 +51,11 @@ export const usePlayerState = (videoRef: React.RefObject<HTMLVideoElement>, cont
   const autoPlayNextRef = useRef<boolean>(props.autoPlayNext ?? false);
   const loopCurrentVideoRef = useRef<boolean>(props.loopCurrentVideo ?? false);
 
+  useEffect(() => {
+    autoPlayNextRef.current = props.autoPlayNext ?? false;
+    loopCurrentVideoRef.current = props.loopCurrentVideo ?? false;
+  }, [props.autoPlayNext, props.loopCurrentVideo]);
+
   const availableThemes = props.themeConfig?.themes || defaultThemes;
   const [currentTheme, setCurrentTheme] = useState<Theme>(() => {
     const defaultThemeName = props.themeConfig?.defaultTheme || 'Dark';

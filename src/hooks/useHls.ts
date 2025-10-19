@@ -19,7 +19,11 @@ export const useHls = (
       hlsRef.current = null;
     }
 
-    if (!source?.src) return;
+    if (!source?.src) {
+      video.src = ''; // Explicitly set src to empty if no source
+      video.load();
+      return;
+    }
 
     const isHLS = source.src.includes('.m3u8') || source.type === 'application/x-mpegURL';
     if (isHLS && Hls.isSupported()) {

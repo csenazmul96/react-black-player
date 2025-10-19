@@ -1,3 +1,5 @@
+import type { Icons } from './icons';
+
 /**
  * Represents a video source with quality options
  * @interface VideoSource
@@ -9,8 +11,10 @@ export interface VideoSource {
   type?: string;
   /** Quality label for the video (e.g., '720p', '1080p', '4K') */
   quality?: string;
-  /** Poster/banner image URL for this video source */
+  /** Poster/banner image URL for this specific video source */
   poster?: string;
+  /** Aspect ratio for this specific video source (e.g., '16/9', '4/3') */
+  aspectRatio?: string;
 }
 
 /**
@@ -115,8 +119,8 @@ export interface ControlsVisibility {
   nextPrev?: boolean;
   /** Show/hide Picture-in-Picture button. Defaults to false. */
   pictureInPicture?: boolean;
-  /** Show/hide all player controls. Defaults to true. */
-  all?: boolean;
+  /** Hide all player controls. Defaults to false. */
+  hideController?: boolean;
 }
 
 
@@ -243,13 +247,17 @@ export interface ReactBlackPlayerEvents {
  * Combines configuration, events, and required props
  * @type ReactBlackPlayerProps
  */
+export * from './icons';
+
 export type ReactBlackPlayerProps = ReactBlackPlayerConfig & ReactBlackPlayerEvents & {
-  /** Array of video sources (required) */
-  sources: VideoSource[];
+  /** Array of video sources */
+  sources?: VideoSource[];
   /** URL of the poster image to show before playback */
   poster?: string;
   /** Array of subtitle tracks */
   subtitles?: SubtitleTrack[];
   /** Additional CSS classes for the container */
   className?: string;
+  /** Custom icons for player controls */
+  icons?: Icons;
 };

@@ -21,6 +21,7 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = (props) => {
     width = '100%',
     height = 'auto',
     aspectRatio = '9/16',
+    icons,
    } = props;
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -34,7 +35,7 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = (props) => {
     playlist: showPlaylist = true,
     nextPrev: showNextPrev = true,
     pictureInPicture: showPictureInPicture = false,
-    all: showControlsProp = true,
+    hideController: hideControlsProp = false,
   } = controls;
 
   const playerState = usePlayerState(videoRef, containerRef, props);
@@ -158,9 +159,7 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = (props) => {
           objectFit: 'contain',
           backgroundColor: '#000000',
           ...(protectSource && {
-            pointerEvents: 'auto',
             userSelect: 'none',
-            WebkitUserSelect: 'none',
           }),
         }}
         controlsList={protectSource ? 'nodownload nofullscreen noremoteplayback' : undefined}
@@ -175,6 +174,7 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = (props) => {
           e.stopPropagation();
           togglePlay();
         }}
+        onContextMenu={protectSource ? (e) => e.preventDefault() : undefined}
       >
         {currentSubtitles && currentSubtitles.map((subtitle, index) => (
           <track
@@ -212,16 +212,16 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = (props) => {
           )}
 
           {showCenterPlay && !isBuffering && (
-              <PlayButtonInMiddleOfPlayer togglePlay={togglePlay} isVideoEnded={isVideoEnded} currentTheme={currentTheme} />
+              <PlayButtonInMiddleOfPlayer togglePlay={togglePlay} isVideoEnded={isVideoEnded} currentTheme={currentTheme} icons={icons} />
           )}
         </>
       )}
 
       {isBuffering && (
-        <BufferingSpinner currentTheme={currentTheme} />
+        icons?.spinner ? React.createElement(icons.spinner, { currentTheme }) : <BufferingSpinner currentTheme={currentTheme} />
       )}
 
-      {showControlsProp && (
+      {!hideControlsProp && (
         <div
           className={`absolute bottom-0 left-0 right-0 transition-opacity duration-300 z-40 ${
             showControlsState ? 'opacity-100' : 'opacity-0'
@@ -286,6 +286,7 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = (props) => {
             availableThemes={availableThemes}
             handleThemeChange={handleThemeChange}
             textLabels={textLabels}
+            icons={icons}
           />
         </div>
       )}

@@ -59,7 +59,8 @@
   },
   "dependencies": {
     "hls.js": "^1.5.7",
-    "lucide-react": "^0.445.0"
+    "lucide-react": "^0.445.0",
+    "react-black-player": "file:react-black-player-1.0.0.tgz"
   },
   "devDependencies": {
     "@types/node": "^20.11.5",

@@ -13,7 +13,7 @@ import {
   PictureInPicture,
   ListMusic,
 } from 'lucide-react';
-import type { Theme, SubtitleTrack, ThemeConfig, TextLabels } from '../../types';
+import type { Theme, SubtitleTrack, ThemeConfig, TextLabels, Icons } from '../../types';
 import { SettingsMenu } from '../SettingsMenu';
 
 interface PlayerControlsProps {
@@ -61,6 +61,7 @@ interface PlayerControlsProps {
   availableThemes: Theme[];
   handleThemeChange: (theme: Theme) => void;
   textLabels: TextLabels;
+  icons?: Icons;
 }
 
 export const PlayerControls: React.FC<PlayerControlsProps> = ({
@@ -108,7 +109,21 @@ export const PlayerControls: React.FC<PlayerControlsProps> = ({
   availableThemes,
   handleThemeChange,
   textLabels,
+  icons,
 }) => {
+  const PlayIcon = icons?.play || Play;
+  const PauseIcon = icons?.pause || Pause;
+  const ReplayIcon = icons?.replay || Square;
+  const SkipBackIcon = icons?.skipBack || SkipBack;
+  const SkipForwardIcon = icons?.skipForward || SkipForward;
+  const VolumeIcon = icons?.volume || VolumeX; // Muted state
+  const MutedVolumeIcon = icons?.mutedVolume || Volume2; // Unmuted state
+  const PictureInPictureIcon = icons?.pictureInPicture || PictureInPicture;
+  const SettingsIcon = icons?.settings || Settings;
+  const ListMusicIcon = icons?.listMusic || ListMusic;
+  const MinimizeIcon = icons?.minimize || Minimize;
+  const MaximizeIcon = icons?.maximize || Maximize;
+
   return (
     <div className="flex items-center justify-between px-4 py-3" onClick={closePlaylistOnControlClick}>
       <div className="flex items-center gap-4">
@@ -125,11 +140,11 @@ export const PlayerControls: React.FC<PlayerControlsProps> = ({
           }}
         >
           {isPlaying ? (
-            <Pause className="w-8 h-8" strokeWidth={1} />
+            <PauseIcon className="w-8 h-8" strokeWidth={1} />
           ) : isVideoEnded ? (
-            <Square className="w-8 h-8" strokeWidth={1.5} />
+            <ReplayIcon className="w-8 h-8" strokeWidth={1.5} />
           ) : (
-            <Play className="w-8 h-8" strokeWidth={1} />
+            <PlayIcon className="w-8 h-8" strokeWidth={1} />
           )}
         </button>
 
@@ -155,7 +170,7 @@ export const PlayerControls: React.FC<PlayerControlsProps> = ({
                   }
               }}
             >
-              <SkipBack className="w-5 h-5" strokeWidth={1} />
+              <SkipBackIcon className="w-5 h-5" strokeWidth={1} />
             </button>
             <button
               onClick={(e) => {
@@ -176,7 +191,7 @@ export const PlayerControls: React.FC<PlayerControlsProps> = ({
                   }
               }}
             >
-              <SkipForward className="w-5 h-5" strokeWidth={1} />
+              <SkipForwardIcon className="w-5 h-5" strokeWidth={1} />
             </button>
           </>
         )}
@@ -201,9 +216,9 @@ export const PlayerControls: React.FC<PlayerControlsProps> = ({
               }}
             >
               {isMuted || volume === 0 ? (
-                <VolumeX className="w-5 h-5" strokeWidth={1} />
+                <VolumeIcon className="w-5 h-5" strokeWidth={1} />
               ) : (
-                <Volume2 className="w-5 h-5" strokeWidth={1} />
+                <MutedVolumeIcon className="w-5 h-5" strokeWidth={1} />
               )}
             </button>
             {/* Horizontal volume slider */}
@@ -260,7 +275,7 @@ export const PlayerControls: React.FC<PlayerControlsProps> = ({
             }}
             title="Picture-in-Picture"
           >
-            <PictureInPicture className="w-5 h-5" strokeWidth={1} />
+            <PictureInPictureIcon className="w-5 h-5" strokeWidth={1} />
           </button>
         )}
 
@@ -283,7 +298,7 @@ export const PlayerControls: React.FC<PlayerControlsProps> = ({
                   }
               }}
             >
-              <Settings className="w-5 h-5" strokeWidth={1} />
+              <SettingsIcon className="w-5 h-5" strokeWidth={1} />
             </button>
 
             <SettingsMenu
@@ -326,7 +341,7 @@ export const PlayerControls: React.FC<PlayerControlsProps> = ({
                 }
             }}
           >
-            <ListMusic className="w-5 h-5" strokeWidth={1} />
+            <ListMusicIcon className="w-5 h-5" strokeWidth={1} />
           </button>
         )}
 
@@ -349,9 +364,9 @@ export const PlayerControls: React.FC<PlayerControlsProps> = ({
             }}
           >
             {isFullscreen ? (
-              <Minimize className="w-5 h-5" strokeWidth={1} />
+              <MinimizeIcon className="w-5 h-5" strokeWidth={1} />
             ) : (
-              <Maximize className="w-5 h-5" strokeWidth={1} />
+              <MaximizeIcon className="w-5 h-5" strokeWidth={1} />
             )}
           </button>
         )}

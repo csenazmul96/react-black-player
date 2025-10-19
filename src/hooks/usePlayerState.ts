@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import Hls from 'hls.js';
 import type { ReactBlackPlayerProps, Theme, SubtitleTrack } from '../types';
 import { defaultThemes } from '../themes';
@@ -17,18 +17,36 @@ export const usePlayerState = (videoRef: React.RefObject<HTMLVideoElement>, cont
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
   const [showPlaylistSidebar, setShowPlaylistSidebar] = useState(false);
   const [currentPlaylistIndex, setCurrentPlaylistIndex] = useState(0);
-  const [currentSources, setCurrentSources] = useState(() => {
-    if (playlist && playlist.length > 0) {
-      return playlist[0].sources;
+
+  const baseSources = useMemo(() => {
+    if (sources && sources.length > 0) {
+      return sources;
+    } else if (playlist && playlist.length > 0) {
+      return playlist[currentPlaylistIndex].sources || [];
     }
-    return sources;
-  });
-  const [currentSubtitles, setCurrentSubtitles] = useState(() => {
-    if (playlist && playlist.length > 0) {
-      return playlist[0].subtitles || [];
+    return [];
+  }, [sources, playlist, currentPlaylistIndex]);
+
+  const baseSubtitles = useMemo(() => {
+    if (sources && sources.length > 0) {
+      return subtitles || [];
+    } else if (playlist && playlist.length > 0) {
+      return playlist[currentPlaylistIndex].subtitles || [];
     }
-    return subtitles;
-  });
+    return [];
+  }, [sources, subtitles, playlist, currentPlaylistIndex]);
+
+  const [currentSources, setCurrentSources] = useState(baseSources);
+  const [currentSubtitles, setCurrentSubtitles] = useState(baseSubtitles);
+
+  useEffect(() => {
+    setCurrentSources(baseSources);
+  }, [baseSources]);
+
+  useEffect(() => {
+    setCurrentSubtitles(baseSubtitles);
+  }, [baseSubtitles]);
+
   const [activeSubtitle, setActiveSubtitle] = useState<number>(-1);
   const [preferredSubtitleLanguage, setPreferredSubtitleLanguage] = useState<string | null>(null);
   const [showCenterPlay, setShowCenterPlay] = useState(!autoPlay);
@@ -42,6 +60,16 @@ export const usePlayerState = (videoRef: React.RefObject<HTMLVideoElement>, cont
   const [showControlsState, setShowControlsState] = useState(true);
   const [seekPreviewTime, setSeekPreviewTime] = useState<number | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
+
+  const parseAspectRatio = useCallback((aspectRatioString: string | undefined): number | null => {
+    if (aspectRatioString) {
+      const parts = aspectRatioString.split('/').map(Number);
+      if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1]) && parts[1] !== 0) {
+        return parts[0] / parts[1];
+      }
+    }
+    return null;
+  }, []);
 
   const isQualitySwitching = useRef<boolean>(false);
   const hideControlsTimeout = useRef<NodeJS.Timeout | null>(null);
@@ -70,7 +98,7 @@ export const usePlayerState = (videoRef: React.RefObject<HTMLVideoElement>, cont
     theme: props.labels?.theme || 'Theme',
   };
 
-  const uniqueQualities = ['auto', ...Array.from(new Set(sources.filter(s => s.quality).map(s => s.quality!)))];
+  const uniqueQualities = ['auto', ...Array.from(new Set((baseSources || []).filter(s => s.quality).map(s => s.quality!)))];
 
   const resetHideControlsTimer = useCallback(() => {
     if (hideControlsTimeout.current) {
@@ -273,6 +301,7 @@ export const usePlayerState = (videoRef: React.RefObject<HTMLVideoElement>, cont
     setCurrentSources(nextItem.sources);
     setCurrentSubtitles(nextSubtitles);
     setActiveSubtitle(bestSubtitleIndex);
+    setVideoAspectRatio(parseAspectRatio(nextItem.sources[0]?.aspectRatio)); // Set aspect ratio from source
     
     onPlaylistItemChange?.(nextItem, nextIndex);
     onNextVideoPlay?.(nextItem, nextIndex);
@@ -301,6 +330,7 @@ export const usePlayerState = (videoRef: React.RefObject<HTMLVideoElement>, cont
     setCurrentSources(prevItem.sources);
     setCurrentSubtitles(prevSubtitles);
     setActiveSubtitle(bestSubtitleIndex);
+    setVideoAspectRatio(parseAspectRatio(prevItem.sources[0]?.aspectRatio)); // Set aspect ratio from source
     setShowCenterPlay(false);
     onPlaylistItemChange?.(prevItem, prevIndex);
     
@@ -319,6 +349,7 @@ export const usePlayerState = (videoRef: React.RefObject<HTMLVideoElement>, cont
     setCurrentSources(item.sources);
     setCurrentSubtitles(itemSubtitles);
     setActiveSubtitle(bestSubtitleIndex);
+    setVideoAspectRatio(parseAspectRatio(item.sources[0]?.aspectRatio)); // Set aspect ratio from source
     setShowCenterPlay(false);
     setShowPlaylistSidebar(false);
     onPlaylistItemChange?.(item, index);
@@ -359,9 +390,10 @@ export const usePlayerState = (videoRef: React.RefObject<HTMLVideoElement>, cont
     onQualityChange?.(quality);
     
     if (quality === 'auto') {
-      setCurrentSources(sources);
+      setCurrentSources(baseSources);
+      setVideoAspectRatio(null); // Reset aspect ratio if going back to auto
     } else {
-      const qualitySource = sources.find(s => s.quality === quality);
+      const qualitySource = baseSources.find(s => s.quality === quality);
       if (qualitySource && videoRef.current) {
         const currentTime = videoRef.current.currentTime;
         const wasPlaying = !videoRef.current.paused;
@@ -369,6 +401,7 @@ export const usePlayerState = (videoRef: React.RefObject<HTMLVideoElement>, cont
         isQualitySwitching.current = true;
         
         setCurrentSources([qualitySource]);
+        setVideoAspectRatio(parseAspectRatio(qualitySource.aspectRatio)); // Set aspect ratio from source
         
         const restoreState = () => {
           if (videoRef.current) {
@@ -388,7 +421,7 @@ export const usePlayerState = (videoRef: React.RefObject<HTMLVideoElement>, cont
         videoRef.current.addEventListener('loadedmetadata', restoreState);
       }
     }
-  }, [sources, onQualityChange, videoRef]);
+  }, [baseSources, onQualityChange, videoRef]);
 
   const handleThemeChange = useCallback((theme: Theme) => {
     setCurrentTheme(theme);
@@ -662,7 +695,8 @@ export const usePlayerState = (videoRef: React.RefObject<HTMLVideoElement>, cont
     playlist,
     seekPreviewTime,
     isDraggingProgress,
-    currentPoster: currentSources[0]?.poster,
+    currentPoster: currentSources[0]?.poster || props.poster,
+    currentVideoAspectRatio: parseAspectRatio(currentSources[0]?.aspectRatio) || videoAspectRatio,
     isFullscreen,
     setPlaylistDurations,
     setIsAudio,

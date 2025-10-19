@@ -1,4 +1,5 @@
 import {Play, RotateCcw} from "lucide-react";
+import type { Icons } from '../../types';
 
 interface propsTypes {
     isVideoEnded: boolean;
@@ -10,10 +11,14 @@ interface propsTypes {
         backgroundColor?: string ,
         textColor?: string,
         accentColor?: string,
-    }
+    };
+    icons?: Icons;
 }
 
-function PlayButtonInMiddleOfPlayer({currentTheme, togglePlay, isVideoEnded}: propsTypes) {
+function PlayButtonInMiddleOfPlayer({currentTheme, togglePlay, isVideoEnded, icons}: propsTypes) {
+    const PlayIcon = icons?.play || Play;
+    const ReplayIcon = icons?.replay || RotateCcw;
+
     return (
         <div
             className="absolute inset-0 flex items-center justify-center cursor-pointer z-10"
@@ -27,9 +32,9 @@ function PlayButtonInMiddleOfPlayer({currentTheme, togglePlay, isVideoEnded}: pr
                 style={{ backgroundColor: `${currentTheme.primaryColor}B3`, color: currentTheme.textColor || '#FFFFFF' }}
             >
                 {isVideoEnded ? (
-                    <RotateCcw className="w-12 h-12" strokeWidth={1.5} />
+                    <ReplayIcon className="w-12 h-12" strokeWidth={1.5} />
                 ) : (
-                    <Play className="w-12 h-12" strokeWidth={1.5} />
+                    <PlayIcon className="w-12 h-12" strokeWidth={1.5} />
                 )}
             </div>
         </div>

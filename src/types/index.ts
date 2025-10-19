@@ -198,6 +198,8 @@ export interface ReactBlackPlayerEvents {
   onNextVideoPlay?: (item: PlaylistItem, index: number) => void;
   /** Callback when theme is changed */
   onThemeChange?: (theme: Theme) => void;
+  /** Callback when subtitle track is changed */
+  onSubtitleChange?: (track: SubtitleTrack | null, index: number) => void;
   /** Callback when an error occurs */
   onError?: (error: any) => void;
   /** Callback when video metadata is loaded */

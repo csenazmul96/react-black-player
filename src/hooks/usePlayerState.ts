@@ -5,7 +5,7 @@ import { defaultThemes } from '../themes';
 import { getThemeByName } from '../utils/theme';
 
 export const usePlayerState = (videoRef: React.RefObject<HTMLVideoElement>, containerRef: React.RefObject<HTMLDivElement>, props: ReactBlackPlayerProps) => {
-  const { sources, subtitles, playlist, autoPlay, muted, onPlay, onPause, onEnded, onSeeked, onTimeUpdate, onVolumeChange, onQualityChange, onPlaybackRateChange, onFullscreenChange, onPlaylistItemChange, onNextVideoPlay, onThemeChange, onLoadedMetadata, onCanPlay, onSeeking, onLoadStart, onProgress, onSuspend, onAbort, onEmptied, onStalled, onLoadedData, onCanPlayThrough, onPlaying, onWaiting, onDurationChange, onResize, onError, onRateChange, onEnterPictureInPicture, onLeavePictureInPicture } = props;
+  const { sources, subtitles, playlist, autoPlay, muted, onPlay, onPause, onEnded, onSeeked, onTimeUpdate, onVolumeChange, onQualityChange, onPlaybackRateChange, onFullscreenChange, onPlaylistItemChange, onNextVideoPlay, onThemeChange, onSubtitleChange, onLoadedMetadata, onCanPlay, onSeeking, onLoadStart, onProgress, onSuspend, onAbort, onEmptied, onStalled, onLoadedData, onCanPlayThrough, onPlaying, onWaiting, onDurationChange, onResize, onError, onRateChange, onEnterPictureInPicture, onLeavePictureInPicture } = props;
   const hlsRef = useRef<Hls | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -336,9 +336,12 @@ export const usePlayerState = (videoRef: React.RefObject<HTMLVideoElement>, cont
       video.textTracks[i].mode = 'hidden';
     }
 
+    let selectedTrack: SubtitleTrack | null = null;
+
     if (index >= 0 && index < video.textTracks.length) {
       video.textTracks[index].mode = 'showing';
       if(currentSubtitles) {
+        selectedTrack = currentSubtitles[index];
         setPreferredSubtitleLanguage(currentSubtitles[index]?.srclang || null);
       }
     } else {
@@ -347,7 +350,8 @@ export const usePlayerState = (videoRef: React.RefObject<HTMLVideoElement>, cont
 
     setActiveSubtitle(index);
     setShowSettingsMenu(false);
-  }, [currentSubtitles, videoRef]);
+    onSubtitleChange?.(selectedTrack, index);
+  }, [currentSubtitles, videoRef, onSubtitleChange]);
 
   const handleQualityChange = useCallback((quality: string) => {
     setCurrentQuality(quality);
@@ -534,7 +538,10 @@ export const usePlayerState = (videoRef: React.RefObject<HTMLVideoElement>, cont
 
     const handleLoadStart = (event: any) => onLoadStart?.(event);
     const handleProgress = (event: any) => onProgress?.(event);
-    const handleSuspend = (event: any) => onSuspend?.(event);
+    const handleSuspend = (event: any) => {
+      if (isQualitySwitching.current) return;
+      onSuspend?.(event);
+    };
     const handleAbort = (event: any) => onAbort?.(event);
     const handleEmptied = (event: any) => onEmptied?.(event);
     const handleLoadedData = (event: any) => onLoadedData?.(event);

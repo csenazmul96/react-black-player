@@ -5,7 +5,7 @@ import { defaultThemes } from '../themes';
 import { getThemeByName } from '../utils/theme';
 
 export const usePlayerState = (videoRef: React.RefObject<HTMLVideoElement>, containerRef: React.RefObject<HTMLDivElement>, props: ReactBlackPlayerProps) => {
-  const { sources, subtitles, playlist, autoPlay, muted, onPlay, onPause, onEnded, onSeeked, onTimeUpdate, onVolumeChange, onQualityChange, onPlaybackRateChange, onFullscreenChange, onPlaylistItemChange, onNextVideoPlay, onThemeChange } = props;
+  const { sources, subtitles, playlist, autoPlay, muted, onPlay, onPause, onEnded, onSeeked, onTimeUpdate, onVolumeChange, onQualityChange, onPlaybackRateChange, onFullscreenChange, onPlaylistItemChange, onNextVideoPlay, onThemeChange, onLoadedMetadata, onCanPlay, onSeeking, onLoadStart, onProgress, onSuspend, onAbort, onEmptied, onStalled, onLoadedData, onCanPlayThrough, onPlaying, onWaiting, onDurationChange, onResize, onError, onRateChange, onEnterPictureInPicture, onLeavePictureInPicture } = props;
   const hlsRef = useRef<Hls | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -111,9 +111,7 @@ export const usePlayerState = (videoRef: React.RefObject<HTMLVideoElement>, cont
     if (isVideoEnded) {
       video.currentTime = 0;
       setIsVideoEnded(false);
-      video.play().then(() => {
-        onPlay?.();
-      }).catch(() => {
+      video.play().catch(() => {
         setIsPlaying(false);
         setShowCenterPlay(true);
       });
@@ -121,17 +119,14 @@ export const usePlayerState = (videoRef: React.RefObject<HTMLVideoElement>, cont
     }
 
     if (video.paused) {
-      video.play().then(() => {
-        onPlay?.();
-      }).catch(() => {
+      video.play().catch(() => {
         setIsPlaying(false);
         setShowCenterPlay(true);
       });
     } else {
       video.pause();
-      onPause?.();
     }
-  }, [onPlay, onPause, showPlaylistSidebar, isVideoEnded, videoRef]);
+  }, [showPlaylistSidebar, isVideoEnded, videoRef]);
 
   const handleVolumeChange = useCallback((newVolume: number) => {
     const video = videoRef.current;
@@ -178,8 +173,7 @@ export const usePlayerState = (videoRef: React.RefObject<HTMLVideoElement>, cont
 
   const handleProgressClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     updateProgress(e.clientX, false);
-    onSeeked?.();
-  }, [updateProgress, onSeeked]);
+  }, [updateProgress]);
 
   const handleProgressMouseDown = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     isDraggingProgress.current = true;
@@ -197,9 +191,8 @@ export const usePlayerState = (videoRef: React.RefObject<HTMLVideoElement>, cont
       isDraggingProgress.current = false;
       updateProgress(e.clientX, false);
       setSeekPreviewTime(null);
-      onSeeked?.();
     }
-  }, [updateProgress, onSeeked]);
+  }, [updateProgress]);
 
   const changePlaybackRate = useCallback((rate: number) => {
     const video = videoRef.current;
@@ -422,7 +415,7 @@ export const usePlayerState = (videoRef: React.RefObject<HTMLVideoElement>, cont
       onTimeUpdate?.(video.currentTime);
     };
 
-    const handleLoadedMetadata = () => {
+    const handleLoadedMetadata = (event: any) => {
       setDuration(video.duration);
       
       if (video.videoWidth && video.videoHeight) {
@@ -430,10 +423,10 @@ export const usePlayerState = (videoRef: React.RefObject<HTMLVideoElement>, cont
         setVideoAspectRatio(aspectRatio);
       }
       
-      props.onLoadedMetadata?.();
+      onLoadedMetadata?.(event);
     };
 
-    const handleEnded = () => {
+    const handleEnded = (event: any) => {
       setIsPlaying(false);
       
       if (loopCurrentVideoRef.current) {
@@ -474,62 +467,81 @@ export const usePlayerState = (videoRef: React.RefObject<HTMLVideoElement>, cont
         setShowCenterPlay(true);
       }
       
-      onEnded?.();
+      onEnded?.(event);
     };
 
-    const handleCanPlay = () => {
-      props.onCanPlay?.();
+    const handleCanPlay = (event: any) => {
+      onCanPlay?.(event);
     };
 
-    const handleSeeking = () => {
+    const handleSeeking = (event: any) => {
       isSeeking.current = true;
-      props.onSeeking?.();
+      onSeeking?.(event);
     };
 
-    const handlePlay = () => {
+    const handlePlay = (event: any) => {
       setIsPlaying(true);
       setShowCenterPlay(false);
       setIsVideoEnded(false);
+      onPlay?.(event);
     };
 
-    const handlePause = () => {
+    const handlePause = (event: any) => {
       setIsPlaying(false);
       setShowCenterPlay(true);
+      onPause?.(event);
     };
 
-    const handleWaiting = () => {
+    const handleWaiting = (event: any) => {
       setIsBuffering(true);
+      onWaiting?.(event);
     };
 
-    const handlePlaying = () => {
+    const handlePlaying = (event: any) => {
       setIsPlaying(true);
       setShowCenterPlay(false);
       setIsBuffering(false);
       setIsVideoEnded(false);
       setNextVideoPoster(undefined);
+      onPlaying?.(event);
     };
 
-    const handleCanPlayThrough = () => {
+    const handleCanPlayThrough = (event: any) => {
       setIsBuffering(false);
+      onCanPlayThrough?.(event);
     };
 
-    const handleStalled = () => {
+    const handleStalled = (event: any) => {
       setIsBuffering(true);
+      onStalled?.(event);
     };
 
-    const handleSeeked = () => {
+    const handleSeeked = (event: any) => {
       isSeeking.current = false;
       setCurrentTime(video.currentTime);
-      onSeeked?.();
+      onSeeked?.(event);
     };
 
-    const handleEnterPiP = () => {
+    const handleEnterPiP = (event: any) => {
       setIsPictureInPicture(true);
+      onEnterPictureInPicture?.(event);
     };
 
-    const handleLeavePiP = () => {
+    const handleLeavePiP = (event: any) => {
       setIsPictureInPicture(false);
+      onLeavePictureInPicture?.(event);
     };
+
+    const handleLoadStart = (event: any) => onLoadStart?.(event);
+    const handleProgress = (event: any) => onProgress?.(event);
+    const handleSuspend = (event: any) => onSuspend?.(event);
+    const handleAbort = (event: any) => onAbort?.(event);
+    const handleEmptied = (event: any) => onEmptied?.(event);
+    const handleLoadedData = (event: any) => onLoadedData?.(event);
+    const handleDurationChange = (event: any) => onDurationChange?.(event);
+    const handleResize = (event: any) => onResize?.(event);
+    const handleError = (event: any) => onError?.(event);
+    const handleRateChange = (event: any) => onRateChange?.(event);
 
     video.addEventListener('timeupdate', handleTimeUpdate);
     video.addEventListener('loadedmetadata', handleLoadedMetadata);
@@ -545,6 +557,17 @@ export const usePlayerState = (videoRef: React.RefObject<HTMLVideoElement>, cont
     video.addEventListener('stalled', handleStalled);
     video.addEventListener('enterpictureinpicture', handleEnterPiP);
     video.addEventListener('leavepictureinpicture', handleLeavePiP);
+    video.addEventListener('loadstart', handleLoadStart);
+    video.addEventListener('progress', handleProgress);
+    video.addEventListener('suspend', handleSuspend);
+    video.addEventListener('abort', handleAbort);
+    video.addEventListener('emptied', handleEmptied);
+    video.addEventListener('loadeddata', handleLoadedData);
+    video.addEventListener('durationchange', handleDurationChange);
+    video.addEventListener('resize', handleResize);
+    video.addEventListener('error', handleError);
+    video.addEventListener('ratechange', handleRateChange);
+
 
     return () => {
       video.removeEventListener('timeupdate', handleTimeUpdate);
@@ -561,8 +584,18 @@ export const usePlayerState = (videoRef: React.RefObject<HTMLVideoElement>, cont
       video.removeEventListener('stalled', handleStalled);
       video.removeEventListener('enterpictureinpicture', handleEnterPiP);
       video.removeEventListener('leavepictureinpicture', handleLeavePiP);
+      video.removeEventListener('loadstart', handleLoadStart);
+      video.removeEventListener('progress', handleProgress);
+      video.removeEventListener('suspend', handleSuspend);
+      video.removeEventListener('abort', handleAbort);
+      video.removeEventListener('emptied', handleEmptied);
+      video.removeEventListener('loadeddata', handleLoadedData);
+      video.removeEventListener('durationchange', handleDurationChange);
+      video.removeEventListener('resize', handleResize);
+      video.removeEventListener('error', handleError);
+      video.removeEventListener('ratechange', handleRateChange);
     };
-  }, [onTimeUpdate, props.onLoadedMetadata, onEnded, props.onCanPlay, props.onSeeking, playlist, playNextVideo, videoRef, onSeeked]);
+  }, [onTimeUpdate, onLoadedMetadata, onEnded, onCanPlay, onSeeking, playlist, playNextVideo, videoRef, onSeeked, onLoadStart, onProgress, onSuspend, onAbort, onEmptied, onStalled, onLoadedData, onCanPlayThrough, onPlaying, onWaiting, onDurationChange, onResize, onError, onPlay, onPause, onRateChange, onEnterPictureInPicture, onLeavePictureInPicture]);
 
   return {
     isPlaying,

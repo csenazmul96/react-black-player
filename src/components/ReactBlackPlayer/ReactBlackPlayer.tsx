@@ -93,7 +93,7 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = (props) => {
    } = playerState;
 
   useHls(videoRef, currentSources[0], props.onError);
-  useKeyboardControls(videoRef, containerRef, togglePlay, handleVolumeChange, duration, volume, props.onSeeked);
+  useKeyboardControls(videoRef, containerRef, togglePlay, handleVolumeChange, duration, volume);
 
   useEffect(() => {
     const container = containerRef.current;

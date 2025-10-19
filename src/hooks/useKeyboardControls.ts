@@ -6,8 +6,7 @@ export const useKeyboardControls = (
   togglePlay: () => void,
   handleVolumeChange: (volume: number) => void,
   duration: number,
-  volume: number,
-  onSeeked?: () => void
+  volume: number
 ) => {
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     const video = videoRef.current;
@@ -27,13 +26,11 @@ export const useKeyboardControls = (
       case 'ArrowLeft':
         e.preventDefault();
         video.currentTime = Math.max(0, video.currentTime - 10);
-        onSeeked?.();
         break;
 
       case 'ArrowRight':
         e.preventDefault();
         video.currentTime = Math.min(duration, video.currentTime + 10);
-        onSeeked?.();
         break;
 
       case 'ArrowUp':
@@ -62,7 +59,7 @@ export const useKeyboardControls = (
       default:
         break;
     }
-  }, [videoRef, containerRef, togglePlay, handleVolumeChange, duration, volume, onSeeked]);
+  }, [videoRef, containerRef, togglePlay, handleVolumeChange, duration, volume]);
 
   useEffect(() => {
     const container = containerRef.current;

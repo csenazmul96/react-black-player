@@ -173,15 +173,15 @@ export interface ReactBlackPlayerConfig {
  */
 export interface ReactBlackPlayerEvents {
   /** Callback when video starts playing */
-  onPlay?: () => void;
+  onPlay?: (event: any) => void;
   /** Callback when video is paused */
-  onPause?: () => void;
+  onPause?: (event: any) => void;
   /** Callback when video playback ends */
-  onEnded?: () => void;
+  onEnded?: (event: any) => void;
   /** Callback when seek operation completes */
-  onSeeked?: () => void;
+  onSeeked?: (event: any) => void;
   /** Callback when seeking starts */
-  onSeeking?: () => void;
+  onSeeking?: (event: any) => void;
   /** Callback on time update with current playback time */
   onTimeUpdate?: (currentTime: number) => void;
   /** Callback when volume changes */
@@ -201,9 +201,39 @@ export interface ReactBlackPlayerEvents {
   /** Callback when an error occurs */
   onError?: (error: any) => void;
   /** Callback when video metadata is loaded */
-  onLoadedMetadata?: () => void;
+  onLoadedMetadata?: (event: any) => void;
   /** Callback when video can start playing */
-  onCanPlay?: () => void;
+  onCanPlay?: (event: any) => void;
+  /** Callback when the browser starts loading the video */
+  onLoadStart?: (event: any) => void;
+  /** Callback when the browser is downloading the video */
+  onProgress?: (event: any) => void;
+  /** Callback when the browser is intentionally not getting media data */
+  onSuspend?: (event: any) => void;
+  /** Callback when the fetching of the media data is aborted */
+  onAbort?: (event: any) => void;
+  /** Callback when the media has become empty */
+  onEmptied?: (event: any) => void;
+  /** Callback when the browser is trying to get media data, but data is not available */
+  onStalled?: (event: any) => void;
+  /** Callback when the browser has loaded the current frame of the media */
+  onLoadedData?: (event: any) => void;
+  /** Callback when the browser can play through the media without stopping for buffering */
+  onCanPlayThrough?: (event: any) => void;
+  /** Callback when the video is playing */
+  onPlaying?: (event: any) => void;
+  /** Callback when the video stops because it needs to buffer the next frame */
+  onWaiting?: (event: any) => void;
+  /** Callback when the duration of the media is changed */
+  onDurationChange?: (event: any) => void;
+  /** Callback when the video element's size has changed */
+  onResize?: (event: any) => void;
+  /** Callback when the playback rate changes */
+  onRateChange?: (event: any) => void;
+  /** Callback when the video enters Picture-in-Picture mode */
+  onEnterPictureInPicture?: (event: any) => void;
+  /** Callback when the video leaves Picture-in-Picture mode */
+  onLeavePictureInPicture?: (event: any) => void;
 }
 
 /**

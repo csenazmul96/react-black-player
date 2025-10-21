@@ -6,7 +6,9 @@ export const useKeyboardControls = (
   togglePlay: () => void,
   handleVolumeChange: (volume: number) => void,
   duration: number,
-  volume: number
+  volume: number,
+  toggleMute?: () => void,
+  toggleFullscreen?: () => void
 ) => {
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     const video = videoRef.current;
@@ -43,6 +45,20 @@ export const useKeyboardControls = (
         handleVolumeChange(Math.max(0, volume - 0.1));
         break;
 
+      case 'KeyM':
+        e.preventDefault();
+        if (toggleMute) {
+          toggleMute();
+        }
+        break;
+
+      case 'KeyF':
+        e.preventDefault();
+        if (toggleFullscreen) {
+          toggleFullscreen();
+        }
+        break;
+
       case 'Enter':
         e.preventDefault();
         if (!document.fullscreenElement) {
@@ -59,7 +75,7 @@ export const useKeyboardControls = (
       default:
         break;
     }
-  }, [videoRef, containerRef, togglePlay, handleVolumeChange, duration, volume]);
+  }, [videoRef, containerRef, togglePlay, handleVolumeChange, duration, volume, toggleMute, toggleFullscreen]);
 
   useEffect(() => {
     const container = containerRef.current;

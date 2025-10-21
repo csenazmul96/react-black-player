@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import Hls from 'hls.js';
 import type { ReactBlackPlayerProps, Theme, SubtitleTrack } from '../types';
+import type { HlsQualityLevel } from './useHls';
 import { defaultThemes } from '../themes';
 import { getThemeByName } from '../utils/theme';
 
@@ -60,6 +61,8 @@ export const usePlayerState = (videoRef: React.RefObject<HTMLVideoElement>, cont
   const [showControlsState, setShowControlsState] = useState(true);
   const [seekPreviewTime, setSeekPreviewTime] = useState<number | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [hlsQualityLevels, setHlsQualityLevels] = useState<HlsQualityLevel[]>([]);
+  const [currentHlsLevel, setCurrentHlsLevel] = useState<number>(-1);
 
   const parseAspectRatio = useCallback((aspectRatioString: string | undefined): number | null => {
     if (aspectRatioString) {
@@ -98,7 +101,27 @@ export const usePlayerState = (videoRef: React.RefObject<HTMLVideoElement>, cont
     theme: props.labels?.theme || 'Theme',
   };
 
-  const uniqueQualities = ['auto', ...Array.from(new Set((baseSources || []).filter(s => s.quality).map(s => s.quality!)))];
+  // Merge HLS qualities with manual source qualities
+  const uniqueQualities = useMemo(() => {
+    // Safely handle baseSources - ensure it's always an array
+    const sourcesArray = Array.isArray(baseSources) ? baseSources : [];
+    const manualQualities = Array.from(new Set(sourcesArray.filter(s => s?.quality).map(s => s.quality!)));
+    
+    // If we have HLS quality levels, use them
+    if (hlsQualityLevels.length > 0) {
+      const hlsQualities = hlsQualityLevels.map(level => level.name);
+      // Remove duplicates and add 'auto' at the beginning
+      const allQualities = ['auto', ...Array.from(new Set([...hlsQualities, ...manualQualities]))];
+      return allQualities;
+    }
+    
+    // Otherwise, use manual qualities with 'auto' if there are multiple sources
+    if (manualQualities.length > 1) {
+      return ['auto', ...manualQualities];
+    }
+    
+    return manualQualities.length > 0 ? ['auto', ...manualQualities] : [];
+  }, [baseSources, hlsQualityLevels]);
 
   const resetHideControlsTimer = useCallback(() => {
     if (hideControlsTimeout.current) {
@@ -389,39 +412,59 @@ export const usePlayerState = (videoRef: React.RefObject<HTMLVideoElement>, cont
     setShowSettingsMenu(false);
     onQualityChange?.(quality);
     
-    if (quality === 'auto') {
-      setCurrentSources(baseSources);
-      setVideoAspectRatio(null); // Reset aspect ratio if going back to auto
+    // Check if this is an HLS stream with quality levels
+    const isHlsStream = hlsRef.current && hlsQualityLevels.length > 0;
+    
+    if (isHlsStream && hlsRef.current) {
+      // HLS quality switching
+      if (quality === 'auto') {
+        // Enable auto quality switching
+        hlsRef.current.currentLevel = -1;
+        setCurrentHlsLevel(-1);
+      } else {
+        // Find the matching HLS level
+        const hlsLevel = hlsQualityLevels.find(level => level.name === quality);
+        if (hlsLevel) {
+          hlsRef.current.currentLevel = hlsLevel.level;
+          setCurrentHlsLevel(hlsLevel.level);
+        }
+      }
     } else {
-      const qualitySource = baseSources.find(s => s.quality === quality);
-      if (qualitySource && videoRef.current) {
-        const currentTime = videoRef.current.currentTime;
-        const wasPlaying = !videoRef.current.paused;
+      // Manual source switching (existing logic)
+      if (quality === 'auto') {
+        setCurrentSources(baseSources);
+        setVideoAspectRatio(null); // Reset aspect ratio if going back to auto
+      } else {
+        const qualitySource = baseSources.find(s => s.quality === quality);
+        if (qualitySource && videoRef.current) {
+          const currentTime = videoRef.current.currentTime;
+          const wasPlaying = !videoRef.current.paused;
 
-        isQualitySwitching.current = true;
-        
-        setCurrentSources([qualitySource]);
-        setVideoAspectRatio(parseAspectRatio(qualitySource.aspectRatio)); // Set aspect ratio from source
-        
-        const restoreState = () => {
-          if (videoRef.current) {
-            videoRef.current.currentTime = currentTime;
-            if (wasPlaying) {
-              videoRef.current.play();
+          isQualitySwitching.current = true;
+          
+          setCurrentSources([qualitySource]);
+          setVideoAspectRatio(parseAspectRatio(qualitySource.aspectRatio)); // Set aspect ratio from source
+          
+          const restoreState = () => {
+            if (videoRef.current) {
+              videoRef.current.currentTime = currentTime;
+              if (wasPlaying) {
+                videoRef.current.play();
+              }
+              
+              videoRef.current.removeEventListener('loadedmetadata', restoreState);
+
+              setTimeout(() => {
+                isQualitySwitching.current = false;
+              }, 100);
             }
-            
-            videoRef.current.removeEventListener('loadedmetadata', restoreState);
-
-            setTimeout(() => {
-              isQualitySwitching.current = false;
-            }, 100);
-          }
-        };
-        
-        videoRef.current.addEventListener('loadedmetadata', restoreState);
+          };
+          
+          videoRef.current.addEventListener('loadedmetadata', restoreState);
+        }
       }
     }
-  }, [baseSources, onQualityChange, videoRef]);
+  }, [baseSources, onQualityChange, videoRef, hlsQualityLevels]);
 
   const handleThemeChange = useCallback((theme: Theme) => {
     setCurrentTheme(theme);
@@ -700,5 +743,9 @@ export const usePlayerState = (videoRef: React.RefObject<HTMLVideoElement>, cont
     isFullscreen,
     setPlaylistDurations,
     setIsAudio,
+    setHlsQualityLevels,
+    setCurrentHlsLevel,
+    hlsQualityLevels,
+    currentHlsLevel,
   };
 };

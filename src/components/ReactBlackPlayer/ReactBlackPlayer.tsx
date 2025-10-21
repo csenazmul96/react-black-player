@@ -91,10 +91,26 @@ export const ReactBlackPlayer: React.FC<ReactBlackPlayerProps> = (props) => {
     isFullscreen,
     toggleFullscreen,
     closePlaylistOnControlClick,
+    setHlsQualityLevels,
+    setCurrentHlsLevel,
+    hlsRef,
    } = playerState;
 
-  useHls(videoRef, currentSources[0], props.onError);
-  useKeyboardControls(videoRef, containerRef, togglePlay, handleVolumeChange, duration, volume);
+  const hlsInstanceRef = useHls(
+    videoRef, 
+    currentSources[0], 
+    props.onError,
+    setHlsQualityLevels,
+    setCurrentHlsLevel
+  );
+  
+  // Update the hlsRef in playerState with the actual HLS instance
+  useEffect(() => {
+    if (hlsRef) {
+      hlsRef.current = hlsInstanceRef.current;
+    }
+  }, [hlsInstanceRef, hlsRef]);
+  useKeyboardControls(videoRef, containerRef, togglePlay, handleVolumeChange, duration, volume, toggleMute, toggleFullscreen);
 
   useEffect(() => {
     const container = containerRef.current;
